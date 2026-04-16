@@ -1,0 +1,10 @@
+{
+  "name": "Iconfont Replacer",
+  "id": "iconfont-replacer-whale",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": ["https://www.iconfont.cn"]
+  }
+}
