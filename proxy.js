@@ -13,7 +13,7 @@ const TARGET_HOST = 'www.iconfont.cn';
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Cookie, Referer',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Cookie, Referer',
 };
 
 const server = http.createServer((req, res) => {
@@ -28,12 +28,20 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     const body = Buffer.concat(chunks);
 
+    // X-Cookie is a custom header used to bypass browser forbidden-header restrictions.
+    // Rename it to Cookie before forwarding to iconfont.cn.
+    const forwardHeaders = { ...req.headers, host: TARGET_HOST };
+    if (forwardHeaders['x-cookie']) {
+      forwardHeaders['cookie'] = forwardHeaders['x-cookie'];
+      delete forwardHeaders['x-cookie'];
+    }
+
     const options = {
       hostname: TARGET_HOST,
       port: 443,
       path: req.url,
       method: req.method,
-      headers: { ...req.headers, host: TARGET_HOST },
+      headers: forwardHeaders,
     };
 
     const proxyReq = https.request(options, proxyRes => {

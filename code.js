@@ -56,7 +56,7 @@ figma.ui.onmessage = async (msg) => {
       try {
         const res = await fetch(`${ICONFONT_PROXY}/api/user/myprojects.json`, {
           headers: {
-            Cookie: msg.cookie,
+            'X-Cookie': msg.cookie,
             Referer: 'https://www.iconfont.cn',
           },
         });
@@ -74,7 +74,7 @@ figma.ui.onmessage = async (msg) => {
           `${ICONFONT_PROXY}/api/project/detail.json?pid=${encodeURIComponent(msg.pid)}`,
           {
             headers: {
-              Cookie: msg.cookie,
+              'X-Cookie': msg.cookie,
               Referer: 'https://www.iconfont.cn',
             },
           }
@@ -94,7 +94,7 @@ figma.ui.onmessage = async (msg) => {
         const res = await fetch(`${ICONFONT_PROXY}/api/icon/upload.json`, {
           method: 'POST',
           headers: {
-            Cookie: msg.cookie,
+            'X-Cookie': msg.cookie,
             Referer: 'https://www.iconfont.cn',
             'Content-Type': 'application/x-www-form-urlencoded',
           },
