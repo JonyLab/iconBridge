@@ -1,10 +1,552 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"/></head>
+<head>
+<meta charset="utf-8"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #374151; background: #fff; overflow-x: hidden; }
+
+/* Header */
+.header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.header-title { font-weight: 600; font-size: 13px; }
+.btn-icon { background: none; border: none; cursor: pointer; font-size: 15px; color: #6b7280; padding: 2px 4px; line-height: 1; }
+.btn-icon:hover { color: #374151; }
+
+/* Sections */
+.section { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
+.section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 6px; font-weight: 600; }
+
+/* Form controls */
+select, input[type="text"], input:not([type]) {
+  width: 100%; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 5px;
+  font-size: 12px; background: #fff; color: #374151; outline: none;
+}
+select:focus, input:focus { border-color: #3b82f6; }
+
+/* Buttons */
+.btn-primary { padding: 5px 12px; font-size: 11px; background: #3b82f6; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { padding: 5px 12px; font-size: 11px; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 4px; cursor: pointer; }
+.btn-secondary:hover { background: #f3f4f6; }
+.btn-danger { padding: 5px 12px; font-size: 11px; border: 1px solid #fca5a5; color: #ef4444; background: #fff; border-radius: 4px; cursor: pointer; }
+.btn-replace { width: 100%; padding: 8px; font-size: 13px; font-weight: 500; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.btn-replace:hover:not(:disabled) { background: #2563eb; }
+.btn-replace:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+.btn-replace.replacing { background: #93c5fd; cursor: not-allowed; }
+
+/* Loading */
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f3f4f6; border-radius: 5px; color: #9ca3af; font-size: 11px; }
+
+/* Figma node preview */
+.figma-node { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #f3f4f6; border-radius: 6px; }
+.figma-node-thumb { width: 24px; height: 24px; background: #d1d5db; border-radius: 4px; flex-shrink: 0; }
+.figma-node-name { font-weight: 500; }
+.figma-node-hint { color: #6b7280; font-size: 10px; }
+.no-selection { color: #9ca3af; font-size: 11px; padding: 6px 8px; background: #f9fafb; border-radius: 5px; text-align: center; }
+
+/* Icon grid */
+.icon-count { font-size: 10px; color: #6b7280; }
+.search-input { margin-bottom: 8px; }
+.icon-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 180px; overflow-y: auto; }
+.icon-cell { aspect-ratio: 1; background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; border: 2px solid transparent; padding: 3px; overflow: hidden; }
+.icon-cell:hover { background: #e5e7eb; }
+.icon-cell.selected { background: #eff6ff; border-color: #3b82f6; }
+.icon-preview { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon-preview svg { width: 100%; height: 100%; }
+.icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
+.icon-cell.selected .icon-name { color: #3b82f6; }
+.empty-icons { padding: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
+
+/* Action area */
+.action-area { padding: 10px 12px; }
+.replace-info { font-size: 11px; color: #6b7280; margin-bottom: 8px; line-height: 1.6; }
+.replace-info b { color: #374151; }
+.replace-info .target { color: #3b82f6; font-weight: 600; }
+
+/* No-cookie view */
+.empty-view { padding: 40px 16px; text-align: center; }
+.empty-view-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-view-title { font-weight: 500; font-size: 13px; margin-bottom: 6px; }
+.empty-view-desc { color: #9ca3af; font-size: 11px; line-height: 1.5; }
+
+/* Settings overlay */
+.settings-overlay { position: fixed; inset: 0; background: #fff; z-index: 100; display: flex; flex-direction: column; }
+.settings-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.settings-title { font-weight: 600; font-size: 13px; }
+.settings-body { padding: 12px; flex: 1; overflow-y: auto; }
+.settings-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 4px; font-weight: 600; }
+.settings-hint { font-size: 10px; color: #6b7280; margin-bottom: 8px; line-height: 1.5; }
+textarea.cookie-input { width: 100%; height: 80px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 10px; font-family: monospace; resize: none; outline: none; }
+textarea.cookie-input:focus { border-color: #3b82f6; }
+.settings-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.cookie-status { font-size: 11px; }
+.cookie-status.saved { color: #16a34a; }
+.cookie-status.empty { color: #9ca3af; }
+
+/* Error */
+.error-box { padding: 7px 10px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; }
+.error-box-title { color: #dc2626; font-weight: 500; font-size: 11px; margin-bottom: 2px; }
+.error-box-msg { color: #7f1d1d; font-size: 10px; }
+.error-link { color: #dc2626; text-decoration: underline; cursor: pointer; margin-left: 4px; font-size: 11px; }
+.btn-retry { margin-top: 6px; padding: 4px 10px; font-size: 11px; border: 1px solid #d1d5db; background: #fff; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
 <body>
-  <div id="app">Loading…</div>
-  <script>
-    window.onmessage = (e) => console.log('msg', e.data.pluginMessage);
-  </script>
+<div id="app"></div>
+<script>
+// ── STATE ────────────────────────────────────────────────────────
+const state = {
+  view: 'NO_COOKIE',       // 'NO_COOKIE' | 'MAIN'
+  showSettings: false,
+  cookie: '',
+  projects: [],
+  selectedPid: '',
+  icons: [],
+  searchQuery: '',
+  selectedIcon: null,      // { id, font_class, name, show_svg } | null
+  figmaNode: null,         // { id, name } | null
+  projectsLoading: false,
+  projectsError: null,
+  iconsLoading: false,
+  iconsError: null,
+  replacing: false,
+  replaceError: null,
+};
+
+// ── RENDER ENTRY ─────────────────────────────────────────────────
+function render() {
+  document.getElementById('app').innerHTML = buildHTML();
+  bindEvents();
+}
+
+function buildHTML() {
+  if (state.showSettings) return buildSettings();
+  if (state.view === 'NO_COOKIE') return buildNoCookie();
+  return buildMain();
+}
+
+function buildHeader() {
+  return `<div class="header">
+    <span class="header-title">Iconfont Replacer</span>
+    <button class="btn-icon" id="btn-settings" title="设置">⚙</button>
+  </div>`;
+}
+
+function buildNoCookie() {
+  return buildHeader() + `
+  <div class="empty-view">
+    <div class="empty-view-icon">🔑</div>
+    <div class="empty-view-title">请先配置 Cookie</div>
+    <div class="empty-view-desc">点击右上角 ⚙ 填写 iconfont.cn 的 Cookie</div>
+  </div>`;
+}
+
+function buildMain() {
+  return buildHeader()
+    + buildProjectSection()
+    + buildSelectionSection()
+    + buildIconsSection()
+    + buildActionArea();
+}
+
+function buildSettings() {
+  const saved = !!state.cookie;
+  return `<div class="settings-overlay">
+    <div class="settings-header">
+      <span class="settings-title">设置</span>
+      <button class="btn-icon" id="btn-settings-close">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-label">iconfont Cookie</div>
+      <div class="settings-hint">
+        打开 iconfont.cn → 登录 → F12 → Network →<br>
+        任意请求 → 复制 Request Headers 里的 Cookie 字段
+      </div>
+      <textarea class="cookie-input" id="cookie-input"
+        placeholder="cna=xxx; iconfont_token=xxx; ...">${state.cookie}</textarea>
+      <div class="settings-footer">
+        <span class="cookie-status ${saved ? 'saved' : 'empty'}">${saved ? '● 已保存' : '● 未配置'}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-danger" id="btn-clear-cookie">清除</button>
+          <button class="btn-primary" id="btn-save-cookie">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildProjectSection() {
+  if (state.projectsLoading) {
+    return `<div class="section">
+      <div class="section-label">项目</div>
+      <div class="loading-row"><span class="spinner"></span> 正在加载项目…</div>
+    </div>`;
+  }
+  if (state.projectsError) {
+    const isAuth = isAuthError(state.projectsError);
+    return `<div class="section">
+      <div class="section-label">项目</div>
+      <div class="error-box">
+        <div class="error-box-title">${isAuth ? 'Cookie 已过期' : '加载项目失败'}</div>
+        <div class="error-box-msg">${isAuth ? '' : state.projectsError}
+          ${isAuth ? '<span class="error-link" id="btn-reauth">重新配置</span>' : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+  if (state.projects.length === 0) {
+    return `<div class="section">
+      <div class="section-label">项目</div>
+      <div class="no-selection">暂无项目</div>
+    </div>`;
+  }
+  const opts = state.projects.map(p =>
+    `<option value="${p.id}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+  return `<div class="section">
+    <div class="section-label">项目</div>
+    <select id="project-select">${opts}</select>
+  </div>`;
+}
+
+function buildSelectionSection() {
+  const inner = state.figmaNode
+    ? `<div class="figma-node">
+         <div class="figma-node-thumb"></div>
+         <div>
+           <div class="figma-node-name">${state.figmaNode.name}</div>
+           <div class="figma-node-hint">Frame · 已就绪</div>
+         </div>
+       </div>`
+    : `<div class="no-selection">请在 Figma 中选中一个图标</div>`;
+  return `<div class="section">
+    <div class="section-label">当前选中（Figma）</div>
+    ${inner}
+  </div>`;
+}
+
+function buildIconsSection() {
+  const icons = getFilteredIcons();
+  let body = '';
+
+  if (state.iconsLoading) {
+    body = `<div class="loading-row"><span class="spinner"></span> 正在加载图标…</div>`;
+  } else if (state.iconsError) {
+    body = `<div class="error-box">
+      <div class="error-box-title">⚠ 加载图标失败</div>
+      <div class="error-box-msg">${state.iconsError}</div>
+    </div>
+    <button class="btn-retry" id="btn-retry-icons">重试</button>`;
+  } else if (state.icons.length === 0) {
+    body = `<div class="empty-icons">该项目暂无图标</div>`;
+  } else if (icons.length === 0) {
+    body = `<div class="empty-icons">无匹配图标</div>`;
+  } else {
+    const cells = icons.map(ic => {
+      const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
+      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${ic.id}" title="${ic.font_class}">
+        <div class="icon-preview">${sanitizeSvgPreview(ic.show_svg || '')}</div>
+        <div class="icon-name">${ic.font_class}</div>
+      </div>`;
+    }).join('');
+    body = `<div class="icon-grid">${cells}</div>`;
+  }
+
+  return `<div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div class="section-label" style="margin-bottom:0;">iconfont 图标</div>
+      <span class="icon-count">共 ${state.icons.length} 个</span>
+    </div>
+    <input class="search-input" id="search-input" placeholder="🔍 搜索 font class…"
+      value="${state.searchQuery}" />
+    ${body}
+  </div>`;
+}
+
+function buildActionArea() {
+  const ready = !!state.figmaNode && !!state.selectedIcon;
+  const info = ready
+    ? `<b>${state.figmaNode.name}</b> → <span class="target">${state.selectedIcon.font_class}</span>`
+    : `<span style="color:#9ca3af;">选中 Figma 图标和目标图标后替换</span>`;
+  const errorHtml = state.replaceError
+    ? `<div class="error-box" style="margin-bottom:8px;">
+         <div class="error-box-title">⚠ 替换失败</div>
+         <div class="error-box-msg">${state.replaceError}
+           ${isAuthError(state.replaceError) ? '<span class="error-link" id="btn-reauth-replace">重新配置</span>' : ''}
+         </div>
+       </div>`
+    : '';
+  const btnLabel = state.replacing
+    ? `<span class="spinner"></span> 替换中…`
+    : '替换';
+  return `<div class="action-area">
+    <div class="replace-info">${info}</div>
+    ${errorHtml}
+    <button class="btn-replace ${state.replacing ? 'replacing' : ''}"
+      id="btn-replace" ${ready && !state.replacing ? '' : 'disabled'}>
+      ${btnLabel}
+    </button>
+  </div>`;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function getFilteredIcons() {
+  if (!state.searchQuery) return state.icons;
+  const q = state.searchQuery.toLowerCase();
+  return state.icons.filter(ic =>
+    ic.font_class.toLowerCase().includes(q) ||
+    (ic.name && ic.name.toLowerCase().includes(q))
+  );
+}
+
+function isAuthError(msg) {
+  if (!msg) return false;
+  const s = msg.toLowerCase();
+  return s.includes('未登录') || s.includes('401') || s.includes('登录')
+    || s.includes('cookie') || s.includes('过期');
+}
+
+// Strip script tags from show_svg for safety; Figma iframe sandbox limits script execution
+// but we avoid innerHTML injection of <script> entirely.
+function sanitizeSvgPreview(svgStr) {
+  return svgStr.replace(/<script[\s\S]*?<\/script>/gi, '');
+}
+
+// ── BIND EVENTS ──────────────────────────────────────────────────
+function bindEvents() {
+  on('btn-settings', 'click', () => { state.showSettings = true; render(); });
+  on('btn-settings-close', 'click', () => { state.showSettings = false; render(); });
+  on('btn-save-cookie', 'click', saveCookie);
+  on('btn-clear-cookie', 'click', clearCookie);
+  on('btn-reauth', 'click', () => { state.showSettings = true; render(); });
+  on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
+  on('project-select', 'change', (e) => onProjectChange(e.target.value));
+  on('search-input', 'input', (e) => { state.searchQuery = e.target.value; render(); });
+  on('btn-retry-icons', 'click', loadIcons);
+  on('btn-replace', 'click', doReplace);
+
+  document.querySelectorAll('.icon-cell').forEach(cell => {
+    cell.addEventListener('click', () => onIconClick(cell.dataset.id));
+  });
+}
+
+function on(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────
+function saveCookie() {
+  const input = document.getElementById('cookie-input');
+  const val = (input ? input.value : '').trim();
+  state.cookie = val;
+  postToCode({ type: 'save-storage', cookie: val });
+  state.showSettings = false;
+  if (val) {
+    state.view = 'MAIN';
+    render();
+    loadProjects();
+  } else {
+    state.view = 'NO_COOKIE';
+    render();
+  }
+}
+
+function clearCookie() {
+  state.cookie = '';
+  postToCode({ type: 'save-storage', cookie: '' });
+  Object.assign(state, {
+    view: 'NO_COOKIE', showSettings: false,
+    projects: [], icons: [], selectedIcon: null,
+    projectsError: null, iconsError: null, replaceError: null,
+  });
+  render();
+}
+
+function onProjectChange(pid) {
+  state.selectedPid = pid;
+  state.selectedIcon = null;
+  state.replaceError = null;
+  postToCode({ type: 'save-storage', lastPid: pid });
+  loadIcons();
+}
+
+function onIconClick(iconId) {
+  const icon = state.icons.find(ic => String(ic.id) === String(iconId));
+  if (!icon) return;
+  state.selectedIcon = (state.selectedIcon && String(state.selectedIcon.id) === String(iconId))
+    ? null : icon;
+  state.replaceError = null;
+  render();
+}
+
+async function loadProjects() {
+  state.projectsLoading = true;
+  state.projectsError = null;
+  render();
+  try {
+    const projects = await IconfontAPI.getProjects(state.cookie);
+    state.projects = projects;
+    if (projects.length > 0) {
+      const match = projects.find(p => String(p.id) === String(state.selectedPid));
+      state.selectedPid = String(match ? match.id : projects[0].id);
+      postToCode({ type: 'save-storage', lastPid: state.selectedPid });
+      await loadIcons();
+      return; // loadIcons calls render at the end
+    }
+  } catch (e) {
+    state.projectsError = e.message;
+  } finally {
+    state.projectsLoading = false;
+  }
+  render();
+}
+
+async function loadIcons() {
+  if (!state.selectedPid) return;
+  state.iconsLoading = true;
+  state.iconsError = null;
+  state.selectedIcon = null;
+  render();
+  try {
+    state.icons = await IconfontAPI.getIcons(state.cookie, state.selectedPid);
+  } catch (e) {
+    state.iconsError = e.message;
+    state.icons = [];
+  } finally {
+    state.iconsLoading = false;
+    render();
+  }
+}
+
+async function doReplace() {
+  if (!state.figmaNode || !state.selectedIcon || state.replacing) return;
+  state.replacing = true;
+  state.replaceError = null;
+  render();
+  // Async hand-off: code.js exports SVG, then svg-exported message arrives
+  postToCode({ type: 'export-svg', nodeId: state.figmaNode.id });
+}
+
+async function handleSvgExported(svgRaw) {
+  try {
+    const svg = cleanSvg(svgRaw);
+    await IconfontAPI.replaceIcon(state.cookie, state.selectedIcon.id, svg);
+    postToCode({ type: 'notify', message: `✅ 已替换：${state.selectedIcon.font_class}` });
+    state.replaceError = null;
+  } catch (e) {
+    state.replaceError = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
+  } finally {
+    state.replacing = false;
+    render();
+  }
+}
+
+// ── SVG CLEANING ─────────────────────────────────────────────────
+function cleanSvg(svgString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  const svg = doc.documentElement;
+
+  // Remove data-* and id attributes from every element
+  [svg, ...svg.querySelectorAll('*')].forEach(el => {
+    [...el.attributes].forEach(attr => {
+      if (attr.name.startsWith('data-') || attr.name === 'id') {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  // Remove xmlns:xlink if nothing references it
+  const interim = new XMLSerializer().serializeToString(svg);
+  if (!interim.includes('xlink:')) {
+    svg.removeAttribute('xmlns:xlink');
+  }
+
+  return new XMLSerializer().serializeToString(svg);
+}
+
+// ── ICONFONT API ─────────────────────────────────────────────────
+const IconfontAPI = {
+  // ⚠️ 待验证：URL 和返回结构 (data.corpProjects / data.projects)
+  async getProjects(cookie) {
+    const res = await fetch('https://www.iconfont.cn/api/user/myprojects.json', {
+      credentials: 'include',
+      headers: { Cookie: cookie },
+    });
+    const json = await res.json();
+    if (json.code !== 200) throw new Error(json.message || '获取项目列表失败，请检查 Cookie');
+    return (json.data && (json.data.corpProjects || json.data.projects)) || [];
+  },
+
+  // ⚠️ 待验证：data.icons 字段名、show_svg 字段是否存在
+  async getIcons(cookie, pid) {
+    const res = await fetch(
+      `https://www.iconfont.cn/api/project/detail.json?pid=${pid}`,
+      { credentials: 'include', headers: { Cookie: cookie } }
+    );
+    const json = await res.json();
+    if (json.code !== 200) throw new Error(json.message || '获取图标列表失败');
+    return (json.data && json.data.icons) || [];
+  },
+
+  // ⚠️ 待验证：URL、FormData 字段名 (icon_id / svg)
+  async replaceIcon(cookie, iconId, svg) {
+    const body = new FormData();
+    body.append('icon_id', String(iconId));
+    body.append('svg', svg);
+    const res = await fetch('https://www.iconfont.cn/api/icon/upload.json', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Cookie: cookie },
+      body,
+    });
+    const json = await res.json();
+    if (json.code !== 200) throw new Error(json.message || '替换失败');
+    return json;
+  },
+};
+
+// ── MESSAGE BRIDGE ───────────────────────────────────────────────
+function postToCode(msg) {
+  parent.postMessage({ pluginMessage: msg }, '*');
+}
+
+window.onmessage = async (event) => {
+  const msg = event.data && event.data.pluginMessage;
+  if (!msg) return;
+
+  switch (msg.type) {
+    case 'storage-loaded':
+      state.cookie = msg.cookie || '';
+      state.selectedPid = msg.lastPid || '';
+      state.view = state.cookie ? 'MAIN' : 'NO_COOKIE';
+      render();
+      if (state.cookie) loadProjects();
+      break;
+
+    case 'selection-changed':
+      state.figmaNode = msg.node || null;
+      state.replaceError = null;
+      render();
+      break;
+
+    case 'svg-exported':
+      if (msg.error) {
+        state.replaceError = msg.error;
+        state.replacing = false;
+        render();
+      } else {
+        await handleSvgExported(msg.svg);
+      }
+      break;
+  }
+};
+
+// ── INIT ─────────────────────────────────────────────────────────
+render();
+</script>
 </body>
 </html>
