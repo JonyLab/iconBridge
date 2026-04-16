@@ -127,6 +127,15 @@ function buildHTML() {
   return buildMain();
 }
 
+// Escape user/API data before inserting into HTML strings
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildHeader() {
   return `<div class="header">
     <span class="header-title">Iconfont Replacer</span>
@@ -165,7 +174,7 @@ function buildSettings() {
         任意请求 → 复制 Request Headers 里的 Cookie 字段
       </div>
       <textarea class="cookie-input" id="cookie-input"
-        placeholder="cna=xxx; iconfont_token=xxx; ...">${state.cookie}</textarea>
+        placeholder="cna=xxx; iconfont_token=xxx; ...">${esc(state.cookie)}</textarea>
       <div class="settings-footer">
         <span class="cookie-status ${saved ? 'saved' : 'empty'}">${saved ? '● 已保存' : '● 未配置'}</span>
         <div style="display:flex;gap:6px;">
@@ -203,7 +212,7 @@ function buildProjectSection() {
     </div>`;
   }
   const opts = state.projects.map(p =>
-    `<option value="${p.id}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${p.name}</option>`
+    `<option value="${p.id}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
   return `<div class="section">
     <div class="section-label">项目</div>
@@ -216,7 +225,7 @@ function buildSelectionSection() {
     ? `<div class="figma-node">
          <div class="figma-node-thumb"></div>
          <div>
-           <div class="figma-node-name">${state.figmaNode.name}</div>
+           <div class="figma-node-name">${esc(state.figmaNode.name)}</div>
            <div class="figma-node-hint">Frame · 已就绪</div>
          </div>
        </div>`
@@ -246,9 +255,9 @@ function buildIconsSection() {
   } else {
     const cells = icons.map(ic => {
       const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
-      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${ic.id}" title="${ic.font_class}">
+      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${ic.id}" title="${esc(ic.font_class)}">
         <div class="icon-preview">${sanitizeSvgPreview(ic.show_svg || '')}</div>
-        <div class="icon-name">${ic.font_class}</div>
+        <div class="icon-name">${esc(ic.font_class)}</div>
       </div>`;
     }).join('');
     body = `<div class="icon-grid">${cells}</div>`;
@@ -268,7 +277,7 @@ function buildIconsSection() {
 function buildActionArea() {
   const ready = !!state.figmaNode && !!state.selectedIcon;
   const info = ready
-    ? `<b>${state.figmaNode.name}</b> → <span class="target">${state.selectedIcon.font_class}</span>`
+    ? `<b>${esc(state.figmaNode.name)}</b> → <span class="target">${esc(state.selectedIcon.font_class)}</span>`
     : `<span style="color:#9ca3af;">选中 Figma 图标和目标图标后替换</span>`;
   const errorHtml = state.replaceError
     ? `<div class="error-box" style="margin-bottom:8px;">
@@ -311,7 +320,10 @@ function isAuthError(msg) {
 // Strip script tags from show_svg for safety; Figma iframe sandbox limits script execution
 // but we avoid innerHTML injection of <script> entirely.
 function sanitizeSvgPreview(svgStr) {
-  return svgStr.replace(/<script[\s\S]*?<\/script>/gi, '');
+  return svgStr
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
 }
 
 // ── BIND EVENTS ──────────────────────────────────────────────────
@@ -323,7 +335,13 @@ function bindEvents() {
   on('btn-reauth', 'click', () => { state.showSettings = true; render(); });
   on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
   on('project-select', 'change', (e) => onProjectChange(e.target.value));
-  on('search-input', 'input', (e) => { state.searchQuery = e.target.value; render(); });
+  on('search-input', 'input', (e) => {
+    const pos = e.target.selectionStart;
+    state.searchQuery = e.target.value;
+    render();
+    const si = document.getElementById('search-input');
+    if (si) { si.focus(); si.setSelectionRange(pos, pos); }
+  });
   on('btn-retry-icons', 'click', loadIcons);
   on('btn-replace', 'click', doReplace);
 
