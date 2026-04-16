@@ -50,5 +50,60 @@ figma.ui.onmessage = async (msg) => {
       figma.notify(msg.message, { error: !!msg.isError });
       break;
     }
+    case 'api-get-projects': {
+      try {
+        const res = await fetch('https://www.iconfont.cn/api/user/myprojects.json', {
+          headers: {
+            Cookie: msg.cookie,
+            Referer: 'https://www.iconfont.cn',
+          },
+        });
+        const json = await res.json();
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: json });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
+    case 'api-get-icons': {
+      try {
+        const res = await fetch(
+          `https://www.iconfont.cn/api/project/detail.json?pid=${encodeURIComponent(msg.pid)}`,
+          {
+            headers: {
+              Cookie: msg.cookie,
+              Referer: 'https://www.iconfont.cn',
+            },
+          }
+        );
+        const json = await res.json();
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: json });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
+    case 'api-replace-icon': {
+      // ⚠️ 待验证：Body 格式（urlencoded / JSON / multipart）和字段名
+      try {
+        const body = `icon_id=${encodeURIComponent(msg.iconId)}&svg=${encodeURIComponent(msg.svg)}`;
+        const res = await fetch('https://www.iconfont.cn/api/icon/upload.json', {
+          method: 'POST',
+          headers: {
+            Cookie: msg.cookie,
+            Referer: 'https://www.iconfont.cn',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body,
+        });
+        const json = await res.json();
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: json });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
   }
 };
