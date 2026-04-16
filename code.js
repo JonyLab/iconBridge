@@ -1,6 +1,8 @@
 // code.js — Figma main thread
 figma.showUI(__html__, { width: 320, height: 560, title: 'Iconfont Replacer' });
 
+const ICONFONT_PROXY = 'http://localhost:17788';
+
 // On startup: read persisted data and send to UI
 async function loadStorage() {
   const cookie = (await figma.clientStorage.getAsync('iconfont_cookie')) || '';
@@ -52,7 +54,7 @@ figma.ui.onmessage = async (msg) => {
     }
     case 'api-get-projects': {
       try {
-        const res = await fetch('https://www.iconfont.cn/api/user/myprojects.json', {
+        const res = await fetch(`${ICONFONT_PROXY}/api/user/myprojects.json`, {
           headers: {
             Cookie: msg.cookie,
             Referer: 'https://www.iconfont.cn',
@@ -69,7 +71,7 @@ figma.ui.onmessage = async (msg) => {
     case 'api-get-icons': {
       try {
         const res = await fetch(
-          `https://www.iconfont.cn/api/project/detail.json?pid=${encodeURIComponent(msg.pid)}`,
+          `${ICONFONT_PROXY}/api/project/detail.json?pid=${encodeURIComponent(msg.pid)}`,
           {
             headers: {
               Cookie: msg.cookie,
@@ -89,7 +91,7 @@ figma.ui.onmessage = async (msg) => {
       // ⚠️ 待验证：Body 格式（urlencoded / JSON / multipart）和字段名
       try {
         const body = `icon_id=${encodeURIComponent(msg.iconId)}&svg=${encodeURIComponent(msg.svg)}`;
-        const res = await fetch('https://www.iconfont.cn/api/icon/upload.json', {
+        const res = await fetch(`${ICONFONT_PROXY}/api/icon/upload.json`, {
           method: 'POST',
           headers: {
             Cookie: msg.cookie,

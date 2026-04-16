@@ -170,8 +170,9 @@ function buildSettings() {
     <div class="settings-body">
       <div class="settings-label">iconfont Cookie</div>
       <div class="settings-hint">
-        打开 iconfont.cn → 登录 → F12 → Network →<br>
-        任意请求 → 复制 Request Headers 里的 Cookie 字段
+        ① 终端运行：<code>node proxy.js</code>（保持运行）<br>
+        ② 打开 iconfont.cn → 登录 → F12 → Network →<br>
+        　 任意请求 → 复制 Cookie 请求头粘贴到此处
       </div>
       <textarea class="cookie-input" id="cookie-input"
         placeholder="cna=xxx; iconfont_token=xxx; ...">${esc(state.cookie)}</textarea>
@@ -195,11 +196,12 @@ function buildProjectSection() {
   }
   if (state.projectsError) {
     const isAuth = isAuthError(state.projectsError);
+    const isProxy = isProxyError(state.projectsError);
     return `<div class="section">
       <div class="section-label">项目</div>
       <div class="error-box">
-        <div class="error-box-title">${isAuth ? 'Cookie 已过期' : '加载项目失败'}</div>
-        <div class="error-box-msg">${isAuth ? '' : state.projectsError}
+        <div class="error-box-title">${isProxy ? '代理未运行' : isAuth ? 'Cookie 已过期' : '加载项目失败'}</div>
+        <div class="error-box-msg">${isProxy ? '请在终端运行 node proxy.js' : isAuth ? '' : esc(state.projectsError)}
           ${isAuth ? '<span class="error-link" id="btn-reauth">重新配置</span>' : ''}
         </div>
       </div>
@@ -315,6 +317,14 @@ function isAuthError(msg) {
   const s = msg.toLowerCase();
   return s.includes('未登录') || s.includes('401') || s.includes('登录')
     || s.includes('cookie') || s.includes('过期');
+}
+
+function isProxyError(msg) {
+  if (!msg) return false;
+  const s = msg.toLowerCase();
+  return s.includes('econnrefused') || s.includes('failed to fetch')
+    || s.includes('networkerror') || s.includes('502')
+    || s.includes('超时') || s.includes('timeout');
 }
 
 // Strip script tags from show_svg for safety; Figma iframe sandbox limits script execution
