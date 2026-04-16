@@ -21,31 +21,34 @@ figma.on('selectionchange', () => {
 
 // Handle messages from UI
 figma.ui.onmessage = async (msg) => {
-  if (msg.type === 'export-svg') {
-    const node = figma.getNodeById(msg.nodeId);
-    if (!node) {
-      figma.ui.postMessage({ type: 'svg-exported', error: '节点不存在' });
-      return;
+  switch (msg.type) {
+    case 'export-svg': {
+      const node = figma.getNodeById(msg.nodeId);
+      if (!node || !('exportAsync' in node)) {
+        figma.ui.postMessage({ type: 'svg-exported', error: '节点不存在或不可导出' });
+        return;
+      }
+      try {
+        const bytes = await node.exportAsync({ format: 'SVG', contentsOnly: true });
+        const svg = new TextDecoder().decode(bytes);
+        figma.ui.postMessage({ type: 'svg-exported', svg });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'svg-exported', error: '导出失败：' + e.message });
+      }
+      break;
     }
-    try {
-      const bytes = await node.exportAsync({ format: 'SVG', contentsOnly: true });
-      const svg = new TextDecoder().decode(bytes);
-      figma.ui.postMessage({ type: 'svg-exported', svg });
-    } catch (e) {
-      figma.ui.postMessage({ type: 'svg-exported', error: '导出失败：' + e.message });
+    case 'save-storage': {
+      if (msg.cookie !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_cookie', msg.cookie);
+      }
+      if (msg.lastPid !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_last_pid', msg.lastPid);
+      }
+      break;
     }
-  }
-
-  if (msg.type === 'save-storage') {
-    if (msg.cookie !== undefined) {
-      await figma.clientStorage.setAsync('iconfont_cookie', msg.cookie);
+    case 'notify': {
+      figma.notify(msg.message, { error: !!msg.isError });
+      break;
     }
-    if (msg.lastPid !== undefined) {
-      await figma.clientStorage.setAsync('iconfont_last_pid', msg.lastPid);
-    }
-  }
-
-  if (msg.type === 'notify') {
-    figma.notify(msg.message, { error: !!msg.isError });
   }
 };
