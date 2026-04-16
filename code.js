@@ -1,5 +1,5 @@
 // code.js — Figma main thread
-figma.showUI(__html__, { width: 320, height: 560, title: 'Iconfont Replacer' });
+figma.showUI(__html__, { width: 320, height: 480, title: 'Iconfont Replacer' });
 
 const ICONFONT_PROXY = 'http://localhost:17788';
 
