@@ -411,6 +411,60 @@ function buildReplacePreview() {
   '</div>';
 }
 
+function buildUploadPage() {
+  const projectName = state.projects.find(p => String(p.id) === String(state.selectedPid));
+  const header = '<div class="sub-header">' +
+    '<button class="btn-back" id="btn-upload-back">←</button>' +
+    '<span class="sub-header-title">上传新图标</span>' +
+  '</div>';
+  const projectHint = projectName
+    ? '<div class="upload-project-hint">目标项目：' + esc(projectName.name) + '</div>'
+    : '';
+
+  let body = '';
+  if (state.figmaNodes.length === 0) {
+    body = '<div class="upload-empty">' +
+      '<div style="font-size:28px;color:#d1d5db;margin-bottom:8px;">' + SVG_FIGMA + '</div>' +
+      '<div style="font-size:12px;font-weight:500;margin-bottom:4px;">请在 Figma 中选择图标</div>' +
+      '<div style="font-size:10px;color:#9ca3af;">支持多选，选中后将显示在此处</div>' +
+    '</div>';
+  } else {
+    const items = state.figmaNodes.map(n => {
+      const svg = state.figmaNodeSvgs[n.id];
+      const fontClass = state.uploadFontClasses[n.id] || '';
+      return '<div class="upload-node-row">' +
+        '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
+        '<div class="upload-node-info">' +
+          '<div class="upload-node-name">' + esc(n.name) + '</div>' +
+          '<input class="upload-node-class" data-node-id="' + n.id + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    body = '<div class="section section-icons">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 12px;">' +
+        '<div class="section-label" style="margin-bottom:0;">Figma 选中的图标</div>' +
+        '<span class="icon-count">' + state.figmaNodes.length + ' 个</span>' +
+      '</div>' +
+      '<div class="upload-nodes-list" style="padding:0 12px;">' + items + '</div>' +
+    '</div>';
+  }
+
+  const ready = state.figmaNodes.length > 0 && state.figmaNodes.every(n => (state.uploadFontClasses[n.id] || '').trim());
+  const errorHtml = state.uploadError
+    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title">⚠ 上传失败</div>' +
+      '<div class="error-box-msg">' + esc(state.uploadError) +
+        (isAuthError(state.uploadError) ? '<span class="error-link" id="btn-reauth-upload">重新配置</span>' : '') +
+      '</div></div>'
+    : '';
+  const btnLabel = state.uploading ? '<span class="spinner"></span> 上传中…' : '上传 ' + state.figmaNodes.length + ' 个图标';
+
+  return header + projectHint +
+    '<div class="main-body">' + body + '</div>' +
+    '<div class="action-footer">' + errorHtml +
+      '<button class="btn-replace ' + (state.uploading ? 'uploading' : '') + '" id="btn-do-upload" ' + (ready && !state.uploading ? '' : 'disabled') + '>' + btnLabel + '</button>' +
+    '</div>';
+}
+
 // ── TOAST ────────────────────────────────────────────────────────
 let _toastTimer = null;
 function showToast(message, type) {
