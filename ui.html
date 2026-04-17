@@ -589,6 +589,24 @@ function bindEvents() {
     cell.addEventListener('click', () => onIconClick(cell.dataset.id));
   });
 
+  // Drag to Figma
+  document.querySelectorAll('.icon-cell').forEach(cell => {
+    cell.addEventListener('dragstart', (e) => {
+      const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
+      if (!icon || !icon.show_svg) { e.preventDefault(); return; }
+      e.dataTransfer.setData('text/plain', icon.font_class);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    cell.addEventListener('dragend', (e) => {
+      if (e.dataTransfer.dropEffect === 'none') return;
+      const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
+      if (icon && icon.show_svg) {
+        postToCode({ type: 'create-node-from-svg', svg: icon.show_svg, name: icon.font_class });
+      }
+    });
+    cell.setAttribute('draggable', 'true');
+  });
+
   // Upload font class inputs
   document.querySelectorAll('.upload-node-class').forEach(input => {
     input.addEventListener('input', (e) => {
