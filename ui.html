@@ -106,16 +106,31 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 .error-link { color: #dc2626; text-decoration: underline; cursor: pointer; margin-left: 4px; font-size: 11px; }
 .btn-retry { margin-top: 6px; padding: 4px 10px; font-size: 11px; border: 1px solid #d1d5db; background: #fff; border-radius: 4px; cursor: pointer; }
 
-/* Action mode tabs */
-.action-tabs { display: flex; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
-.action-tab { flex: 1; padding: 6px; font-size: 12px; font-weight: 500; background: #fff; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: #9ca3af; }
-.action-tab:hover { color: #374151; }
-.action-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-.upload-class-row { margin-bottom: 8px; }
-.upload-class-label { font-size: 10px; color: #9ca3af; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.upload-class-input { width: 100%; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 12px; font-family: monospace; outline: none; }
-.upload-class-input:focus { border-color: #3b82f6; }
+/* Bottom action bar */
+.btn-action-bar { flex: 1; padding: 8px; font-size: 12px; font-weight: 500; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.btn-action-bar:hover:not(:disabled) { background: #2563eb; }
+.btn-action-bar:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+.btn-action-secondary { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+.btn-action-secondary:hover:not(:disabled) { background: #f3f4f6; }
+
+/* Replace preview area */
+.replace-preview-area { padding: 10px 12px; border-top: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; }
+
+/* Sub header (upload page) */
+.sub-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.sub-header-title { font-weight: 600; font-size: 13px; }
+.btn-back { background: none; border: none; cursor: pointer; font-size: 14px; color: #6b7280; padding: 2px 4px; }
+.btn-back:hover { color: #374151; }
+
+/* Upload page */
+.upload-project-hint { padding: 6px 12px; background: #f0fdf4; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #166534; }
+.upload-empty { padding: 40px 20px; text-align: center; }
 .btn-replace.uploading { background: #93c5fd; cursor: not-allowed; }
+
+/* Drag cursor for icon grid */
+.icon-cell { cursor: grab; }
+.icon-cell:active { cursor: grabbing; }
+.icon-cell.selected { cursor: pointer; }
 
 /* Upload nodes list */
 .upload-nodes-list { overflow-y: auto; flex: 1; min-height: 0; }
