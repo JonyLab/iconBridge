@@ -543,6 +543,7 @@ function bindEvents() {
   on('btn-clear-cookie', 'click', clearCookie);
   on('btn-reauth', 'click', () => { state.showSettings = true; render(); });
   on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
+  on('btn-reauth-upload', 'click', () => { state.showSettings = true; render(); });
   on('project-select', 'change', (e) => onProjectChange(e.target.value));
   on('search-input', 'input', (e) => {
     const pos = e.target.selectionStart;
@@ -552,15 +553,43 @@ function bindEvents() {
     if (si) { si.focus(); si.setSelectionRange(pos, pos); }
   });
   on('btn-retry-icons', 'click', loadIcons);
-  on('btn-replace', 'click', doReplace);
-  on('tab-replace', 'click', () => { state.actionMode = 'replace'; state.uploadError = null; render(); });
-  on('tab-upload', 'click', () => { state.actionMode = 'upload'; state.replaceError = null; render(); });
-  on('btn-upload', 'click', doUpload);
-  on('btn-reauth-upload', 'click', () => { state.showSettings = true; render(); });
 
+  // Main page: replace mode toggle
+  on('btn-replace', 'click', () => {
+    if (!state.selectedIcon) return;
+    state.replaceMode = true;
+    state.replaceError = null;
+    render();
+  });
+  on('btn-cancel-replace', 'click', () => {
+    state.replaceMode = false;
+    state.replaceError = null;
+    render();
+  });
+  on('btn-confirm-replace', 'click', doReplace);
+
+  // Main page: navigate to upload
+  on('btn-goto-upload', 'click', () => {
+    state.view = 'UPLOAD';
+    state.uploadError = null;
+    render();
+  });
+
+  // Upload page: do upload
+  on('btn-do-upload', 'click', doUpload);
+
+  // Upload page: back
+  on('btn-upload-back', 'click', () => {
+    state.view = 'MAIN';
+    render();
+  });
+
+  // Icon grid click
   document.querySelectorAll('.icon-cell').forEach(cell => {
     cell.addEventListener('click', () => onIconClick(cell.dataset.id));
   });
+
+  // Upload font class inputs
   document.querySelectorAll('.upload-node-class').forEach(input => {
     input.addEventListener('input', (e) => {
       state.uploadFontClasses[e.target.dataset.nodeId] = e.target.value;
@@ -600,7 +629,9 @@ function clearCookie() {
   Object.assign(state, {
     view: 'NO_COOKIE', showSettings: false,
     projects: [], icons: [], selectedIcon: null,
-    projectsError: null, iconsError: null, replaceError: null,
+    projectsError: null, iconsError: null,
+    replaceError: null, replaceMode: false,
+    uploadError: null,
   });
   render();
 }
@@ -608,6 +639,7 @@ function clearCookie() {
 function onProjectChange(pid) {
   state.selectedPid = pid;
   state.selectedIcon = null;
+  state.replaceMode = false;
   state.replaceError = null;
   postToCode({ type: 'save-storage', lastPid: pid });
   loadIcons();
@@ -616,8 +648,9 @@ function onProjectChange(pid) {
 function onIconClick(iconId) {
   const icon = state.icons.find(ic => String(ic.id) === String(iconId));
   if (!icon) return;
-  state.selectedIcon = (state.selectedIcon && String(state.selectedIcon.id) === String(iconId))
-    ? null : icon;
+  const wasSelected = state.selectedIcon && String(state.selectedIcon.id) === String(iconId);
+  state.selectedIcon = wasSelected ? null : icon;
+  if (wasSelected) state.replaceMode = false;
   state.replaceError = null;
   render();
 }
@@ -701,11 +734,7 @@ async function handleBatchUpload(results) {
   } else {
     showToast('已提交 ' + successCount + ' 个图标（需管理员审核后生效）', 'success');
     state.uploadError = null;
-    state.figmaNodes = [];
-    state.figmaNode = null;
-    state.figmaNodeSvgs = {};
-    state.figmaNodeSvg = null;
-    state.uploadFontClasses = {};
+    state.view = 'MAIN';
     render();
   }
 }
@@ -716,6 +745,8 @@ async function handleSvgExported(svgRaw) {
     showToast('已替换：' + state.selectedIcon.font_class, 'success');
     state.replaceError = null;
     state.replacing = false;
+    state.replaceMode = false;
+    state.selectedIcon = null;
     await loadIcons();
   } catch (e) {
     state.replaceError = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
