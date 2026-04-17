@@ -343,7 +343,7 @@ function buildIconsSection() {
 
   return `<div class="section section-icons">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div class="section-label" style="margin-bottom:0;">iconfont 图标</div>
+      <div class="section-label" style="margin-bottom:0;">图标库</div>
       <span class="icon-count">共 ${state.icons.length} 个</span>
     </div>
     <input class="search-input" id="search-input" placeholder="🔍 搜索 font class…"
@@ -352,35 +352,7 @@ function buildIconsSection() {
   </div>`;
 }
 
-function buildUploadNodesSection() {
-  if (state.figmaNodes.length === 0) {
-    return '<div class="section section-icons">' +
-      '<div class="section-label">选中的图标</div>' +
-      '<div class="empty-icons">请在 Figma 中选中要上传的图标（支持多选）</div>' +
-    '</div>';
-  }
-  const items = state.figmaNodes.map(n => {
-    const svg = state.figmaNodeSvgs[n.id];
-    const fontClass = state.uploadFontClasses[n.id] || '';
-    return '<div class="upload-node-row">' +
-      '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
-      '<div class="upload-node-info">' +
-        '<div class="upload-node-name">' + esc(n.name) + '</div>' +
-        '<input class="upload-node-class" data-node-id="' + n.id + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  return '<div class="section section-icons">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
-      '<div class="section-label" style="margin-bottom:0;">选中的图标</div>' +
-      '<span class="icon-count">共 ' + state.figmaNodes.length + ' 个</span>' +
-    '</div>' +
-    '<div class="upload-nodes-list">' + items + '</div>' +
-  '</div>';
-}
-
 const SVG_FIGMA = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 6C5 3.79086 6.79086 2 9 2H15C17.2091 2 19 3.79086 19 6C19 7.19469 18.4762 8.26706 17.6458 9C18.4762 9.73295 19 10.8053 19 12C19 14.2091 17.2091 16 15 16C14.2714 16 13.5883 15.8052 13 15.4649V18C13 20.2091 11.2091 22 9 22C6.79086 22 5 20.2091 5 18C5 16.8053 5.52376 15.7329 6.35418 15C5.52376 14.2671 5 13.1947 5 12C5 10.8053 5.52376 9.73295 6.35418 9C5.52376 8.26706 5 7.19469 5 6ZM11 10H9C7.89543 10 7 10.8954 7 12C7 13.1046 7.89543 14 9 14H11V10ZM13 12C13 13.1046 13.8954 14 15 14C16.1046 14 17 13.1046 17 12C17 10.8954 16.1046 10 15 10C13.8954 10 13 10.8954 13 12ZM15 8C16.1046 8 17 7.10457 17 6C17 4.89543 16.1046 4 15 4H13V8H15ZM9 4C7.89543 4 7 4.89543 7 6C7 7.10457 7.89543 8 9 8H11V4H9ZM11 16H9C7.89543 16 7 16.8954 7 18C7 19.1046 7.89543 20 9 20C10.1046 20 11 19.1046 11 18V16Z"></path></svg>';
-const SVG_CURSOR = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.49983 0.5C10.8804 0.500214 11.9998 1.61942 11.9998 3V6.80273C12.555 6.60536 13.1777 6.56765 13.8026 6.74121L18.8026 8.12988C20.1008 8.49069 20.9998 9.67301 20.9998 11.0205V15.501C20.9994 19.6427 17.6415 23.0008 13.4998 23.001C11.0416 23.001 9.17132 22.3082 7.68342 21.002C6.23362 19.7289 5.22494 17.938 4.33381 15.9014C3.40397 13.7762 2.88937 12.4806 2.6092 11.7236C2.25279 10.7598 2.7463 9.41299 4.08577 9.31934L4.33381 9.30859C5.38149 9.29414 6.27675 9.66016 6.99983 10.2598V3C6.99983 1.61929 8.11912 0.5 9.49983 0.5ZM9.49983 2.5C9.22369 2.5 8.99983 2.72386 8.99983 3V14H8.00471L7.01936 14.1973C6.67148 12.4577 5.68476 11.4506 4.59748 11.3252C4.88153 12.0703 5.36224 13.2629 6.16584 15.0996C7.02454 17.0621 7.89139 18.5224 9.00374 19.499C10.0782 20.4421 11.4587 21.001 13.4998 21.001C16.537 21.0008 18.9994 18.538 18.9998 15.501V11.0205C18.9998 10.5714 18.7001 10.177 18.2674 10.0566L13.2674 8.66797C12.6304 8.49101 12.0001 8.96976 11.9998 9.63086V11H9.99983V3C9.99983 2.72397 9.77581 2.50019 9.49983 2.5Z"></path></svg>';
 
 function buildBottomBar() {
   const canReplace = !!state.selectedIcon;
