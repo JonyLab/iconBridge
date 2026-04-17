@@ -306,7 +306,7 @@ function buildProjectSection() {
     </div>`;
   }
   const opts = state.projects.map(p =>
-    `<option value="${p.id}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${esc(p.name)}</option>`
+    `<option value="${esc(p.id)}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
   return `<div class="section">
     <div class="section-label">项目</div>
@@ -323,7 +323,7 @@ function buildIconsSection() {
   } else if (state.iconsError) {
     body = `<div class="error-box">
       <div class="error-box-title">⚠ 加载图标失败</div>
-      <div class="error-box-msg">${state.iconsError}</div>
+      <div class="error-box-msg">${esc(state.iconsError)}</div>
     </div>
     <button class="btn-retry" id="btn-retry-icons">重试</button>`;
   } else if (state.icons.length === 0) {
@@ -333,7 +333,7 @@ function buildIconsSection() {
   } else {
     const cells = icons.map(ic => {
       const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
-      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${ic.id}" title="${esc(ic.font_class)}">
+      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${esc(ic.id)}" title="${esc(ic.font_class)}">
         <div class="icon-preview">${sanitizeSvgPreview(ic.show_svg || '')}</div>
         <div class="icon-name">${esc(ic.font_class)}</div>
       </div>`;
@@ -347,7 +347,7 @@ function buildIconsSection() {
       <span class="icon-count">共 ${state.icons.length} 个</span>
     </div>
     <input class="search-input" id="search-input" placeholder="🔍 搜索 font class…"
-      value="${state.searchQuery}" />
+      value="${esc(state.searchQuery)}" />
     ${body}
   </div>`;
 }
@@ -423,7 +423,7 @@ function buildUploadPage() {
         '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
         '<div class="upload-node-info">' +
           '<div class="upload-node-name">' + esc(n.name) + '</div>' +
-          '<input class="upload-node-class" data-node-id="' + n.id + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
+          '<input class="upload-node-class" data-node-id="' + esc(n.id) + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
         '</div>' +
       '</div>';
     }).join('');
@@ -553,16 +553,13 @@ function bindEvents() {
   // Upload page: back
   on('btn-upload-back', 'click', () => {
     state.view = 'MAIN';
+    state.uploadFontClasses = {};
     render();
   });
 
-  // Icon grid click
+  // Icon grid: click + drag to Figma
   document.querySelectorAll('.icon-cell').forEach(cell => {
     cell.addEventListener('click', () => onIconClick(cell.dataset.id));
-  });
-
-  // Drag to Figma
-  document.querySelectorAll('.icon-cell').forEach(cell => {
     cell.addEventListener('dragstart', (e) => {
       const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
       if (!icon || !icon.show_svg) { e.preventDefault(); return; }
@@ -573,7 +570,7 @@ function bindEvents() {
       if (e.dataTransfer.dropEffect === 'none') return;
       const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
       if (icon && icon.show_svg) {
-        postToCode({ type: 'create-node-from-svg', svg: icon.show_svg, name: icon.font_class });
+        postToCode({ type: 'create-node-from-svg', svg: sanitizeSvgPreview(icon.show_svg), name: icon.font_class });
       }
     });
     cell.setAttribute('draggable', 'true');
@@ -724,6 +721,7 @@ async function handleBatchUpload(results) {
   } else {
     showToast('已提交 ' + successCount + ' 个图标（需管理员审核后生效）', 'success');
     state.uploadError = null;
+    state.uploadFontClasses = {};
     state.view = 'MAIN';
     render();
   }

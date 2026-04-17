@@ -201,17 +201,17 @@ figma.ui.onmessage = async (msg) => {
 
     case 'api-upload-icon': {
       try {
-        var ctoken = extractCtoken(msg.cookie);
+        const ctoken = extractCtoken(msg.cookie);
 
         // Step 1: POST SVG to /api/uploadIcons.json (multipart, field: icons[])
-        var boundary = 'IFBound' + Date.now().toString(36);
-        var uploadBody =
+        const boundary = 'IFBound' + Date.now().toString(36);
+        const uploadBody =
           '--' + boundary + '\r\n' +
           'Content-Disposition: form-data; name="icons[]"; filename="icon.svg"\r\n' +
           'Content-Type: image/svg+xml\r\n\r\n' +
           msg.originSvg + '\r\n' +
           '--' + boundary + '--\r\n';
-        var r1 = await fetch(
+        const r1 = await fetch(
           (msg.proxyUrl || DEFAULT_PROXY) + '/api/uploadIcons.json?ctoken=' + ctoken + '&_csrf=' + ctoken,
           {
             method: 'POST',
@@ -223,19 +223,19 @@ figma.ui.onmessage = async (msg) => {
             body: uploadBody,
           }
         );
-        var t1 = await r1.text();
-        var j1;
+        const t1 = await r1.text();
+        let j1;
         try { j1 = JSON.parse(t1); }
         catch (_) { throw new Error('上传失败 HTTP ' + r1.status + ': ' + t1.slice(0, 100)); }
         if (j1.code !== 200) throw new Error(j1.message || '上传 SVG 失败');
 
         // j1.data contains uploaded icon(s) with id, unicode, etc.
-        var rawData = j1.data;
-        var iconArr = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+        const rawData = j1.data;
+        const iconArr = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
         if (iconArr.length === 0) throw new Error('上传后未返回图标数据');
 
         // Build updateIcons array matching iconfont's expected format
-        var updateIcons = iconArr.map(function(ic) {
+        const updateIcons = iconArr.map(function(ic) {
           return {
             id: ic.id,
             name: msg.fontClass,
@@ -246,14 +246,14 @@ figma.ui.onmessage = async (msg) => {
         });
 
         // Step 2: POST to /api/updateUploadIcons.json to confirm adding to project
-        var saveBody = [
+        const saveBody = [
           'advanceType=project',
           'projectId=' + encodeURIComponent(msg.pid),
           'updateIcons=' + encodeURIComponent(JSON.stringify(updateIcons)),
           't=' + Date.now(),
           'ctoken=' + ctoken,
         ].join('&');
-        var r2 = await fetch(
+        const r2 = await fetch(
           (msg.proxyUrl || DEFAULT_PROXY) + '/api/updateUploadIcons.json',
           {
             method: 'POST',
@@ -265,8 +265,8 @@ figma.ui.onmessage = async (msg) => {
             body: saveBody,
           }
         );
-        var t2 = await r2.text();
-        var j2;
+        const t2 = await r2.text();
+        let j2;
         try { j2 = JSON.parse(t2); }
         catch (_) { throw new Error('保存失败 HTTP ' + r2.status + ': ' + t2.slice(0, 100)); }
         figma.ui.postMessage({ type: 'api-result', id: msg.id, data: j2 });
