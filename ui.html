@@ -4,7 +4,8 @@
 <meta charset="utf-8"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #374151; background: #fff; overflow-x: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #374151; background: #fff; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+#app { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
 /* Header */
 .header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
@@ -12,8 +13,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 .btn-icon { background: none; border: none; cursor: pointer; font-size: 15px; color: #6b7280; padding: 2px 4px; line-height: 1; }
 .btn-icon:hover { color: #374151; }
 
+/* Layout */
+.main-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.section-icons { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
 /* Sections */
-.section { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
+.section { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
 .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 6px; font-weight: 600; }
 
 /* Form controls */
@@ -21,6 +26,7 @@ select, input[type="text"], input:not([type]) {
   width: 100%; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 5px;
   font-size: 12px; background: #fff; color: #374151; outline: none;
 }
+select { -webkit-appearance: none; appearance: none; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
 select:focus, input:focus { border-color: #3b82f6; }
 
 /* Buttons */
@@ -41,7 +47,8 @@ select:focus, input:focus { border-color: #3b82f6; }
 
 /* Figma node preview */
 .figma-node { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #f3f4f6; border-radius: 6px; }
-.figma-node-thumb { width: 24px; height: 24px; background: #d1d5db; border-radius: 4px; flex-shrink: 0; }
+.figma-node-thumb { width: 24px; height: 24px; background: #d1d5db; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.figma-node-thumb svg { width: 100% !important; height: 100% !important; display: block; }
 .figma-node-name { font-weight: 500; }
 .figma-node-hint { color: #6b7280; font-size: 10px; }
 .no-selection { color: #9ca3af; font-size: 11px; padding: 6px 8px; background: #f9fafb; border-radius: 5px; text-align: center; }
@@ -49,21 +56,27 @@ select:focus, input:focus { border-color: #3b82f6; }
 /* Icon grid */
 .icon-count { font-size: 10px; color: #6b7280; }
 .search-input { margin-bottom: 8px; }
-.icon-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: 220px; overflow-y: auto; }
-.icon-cell { aspect-ratio: 1; background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; border: 2px solid transparent; padding: 3px; overflow: hidden; }
+.icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 70px; gap: 4px; overflow-y: auto; flex: 1; min-height: 0; }
+.icon-cell { background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 2px solid transparent; padding: 3px 3px 4px; overflow: hidden; }
 .icon-cell:hover { background: #e5e7eb; }
 .icon-cell.selected { background: #eff6ff; border-color: #3b82f6; }
-.icon-preview { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.icon-preview svg { width: 100%; height: 100%; }
+.icon-preview { display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; min-height: 0; }
+.icon-preview svg { width: 20px; height: 20px; flex-shrink: 0; display: block; overflow: visible !important; }
 .icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
 .icon-cell.selected .icon-name { color: #3b82f6; }
 .empty-icons { padding: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
 
 /* Action area */
-.action-area { padding: 10px 12px; }
-.replace-info { font-size: 11px; color: #6b7280; margin-bottom: 8px; line-height: 1.6; }
-.replace-info b { color: #374151; }
-.replace-info .target { color: #3b82f6; font-weight: 600; }
+.action-area { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.action-footer { padding: 10px 12px; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
+.replace-pair { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.replace-thumb { width: 72px; height: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: #f3f4f6; border-radius: 8px; padding: 4px 4px 4px; }
+.replace-thumb.empty { border: 1px dashed #d1d5db; background: transparent; }
+.replace-thumb-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; }
+.replace-thumb-icon svg { width: 100% !important; height: 100% !important; display: block; overflow: visible !important; }
+.replace-thumb-label { font-size: 9px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
+.replace-thumb.empty .replace-thumb-label { color: #9ca3af; }
+.replace-arrow { font-size: 14px; color: #9ca3af; flex-shrink: 0; }
 
 /* No-cookie view */
 .empty-view { padding: 40px 16px; text-align: center; }
@@ -84,6 +97,7 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 .cookie-status { font-size: 11px; }
 .cookie-status.saved { color: #16a34a; }
 .cookie-status.empty { color: #9ca3af; }
+.download-link { color: #3b82f6; text-decoration: underline; cursor: pointer; }
 
 /* Error */
 .error-box { padding: 7px 10px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 5px; }
@@ -91,6 +105,36 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 .error-box-msg { color: #7f1d1d; font-size: 10px; }
 .error-link { color: #dc2626; text-decoration: underline; cursor: pointer; margin-left: 4px; font-size: 11px; }
 .btn-retry { margin-top: 6px; padding: 4px 10px; font-size: 11px; border: 1px solid #d1d5db; background: #fff; border-radius: 4px; cursor: pointer; }
+
+/* Action mode tabs */
+.action-tabs { display: flex; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+.action-tab { flex: 1; padding: 6px; font-size: 12px; font-weight: 500; background: #fff; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: #9ca3af; }
+.action-tab:hover { color: #374151; }
+.action-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.upload-class-row { margin-bottom: 8px; }
+.upload-class-label { font-size: 10px; color: #9ca3af; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.upload-class-input { width: 100%; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 12px; font-family: monospace; outline: none; }
+.upload-class-input:focus { border-color: #3b82f6; }
+.btn-replace.uploading { background: #93c5fd; cursor: not-allowed; }
+
+/* Upload nodes list */
+.upload-nodes-list { overflow-y: auto; flex: 1; min-height: 0; }
+.upload-node-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+.upload-node-row:last-child { border-bottom: none; }
+.upload-node-thumb { width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 4px; }
+.upload-node-thumb svg { width: 20px; height: 20px; }
+.upload-node-info { flex: 1; min-width: 0; }
+.upload-node-name { font-size: 10px; color: #9ca3af; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-node-class { width: 100%; padding: 4px 6px; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 11px; font-family: monospace; outline: none; }
+.upload-node-class:focus { border-color: #3b82f6; }
+
+/* Toast */
+.toast { position: fixed; bottom: 12px; left: 12px; right: 12px; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #fff; background: #1f2937; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 200; text-align: center; animation: toast-in 0.2s ease-out; }
+.toast.success { background: #16a34a; }
+.toast.error { background: #dc2626; }
+.toast.fade-out { animation: toast-out 0.3s ease-in forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -98,21 +142,30 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 <script>
 // ── STATE ────────────────────────────────────────────────────────
 const state = {
-  view: 'NO_COOKIE',       // 'NO_COOKIE' | 'MAIN'
+  view: 'NO_COOKIE',       // 'NO_COOKIE' | 'MAIN' | 'UPLOAD'
   showSettings: false,
+  showProxyHelp: null,
   cookie: '',
+  proxyUrl: '',
   projects: [],
   selectedPid: '',
   icons: [],
   searchQuery: '',
-  selectedIcon: null,      // { id, font_class, name, show_svg } | null
-  figmaNode: null,         // { id, name } | null
+  selectedIcon: null,      // { id, font_class, name, show_svg, unicode } | null
+  figmaNode: null,         // first selected node { id, name } | null
+  figmaNodeSvg: null,      // first node SVG string | null
+  figmaNodes: [],          // all selected nodes
+  figmaNodeSvgs: {},       // nodeId -> SVG string
   projectsLoading: false,
   projectsError: null,
   iconsLoading: false,
   iconsError: null,
-  replacing: false,
+  replaceMode: false,      // true = replace preview area expanded
+  replacing: false,        // true = replace API call in progress
   replaceError: null,
+  uploadFontClasses: {},   // nodeId -> fontClass string
+  uploading: false,
+  uploadError: null,
 };
 
 // ── RENDER ENTRY ─────────────────────────────────────────────────
@@ -124,6 +177,7 @@ function render() {
 function buildHTML() {
   if (state.showSettings) return buildSettings();
   if (state.view === 'NO_COOKIE') return buildNoCookie();
+  if (state.view === 'UPLOAD') return buildUploadPage();
   return buildMain();
 }
 
@@ -152,16 +206,38 @@ function buildNoCookie() {
   </div>`;
 }
 
+function buildTabs() {
+  return '<div class="action-tabs">' +
+    '<button class="action-tab ' + (state.actionMode === 'replace' ? 'active' : '') + '" id="tab-replace">替换</button>' +
+    '<button class="action-tab ' + (state.actionMode === 'upload' ? 'active' : '') + '" id="tab-upload">新增</button>' +
+  '</div>';
+}
+
 function buildMain() {
+  if (state.actionMode === 'upload') {
+    return buildHeader()
+      + buildTabs()
+      + `<div class="main-body">`
+      + buildProjectSection()
+      + buildUploadNodesSection()
+      + `</div>`
+      + buildActionButton();
+  }
   return buildHeader()
+    + buildTabs()
+    + buildActionArea()
+    + `<div class="main-body">`
     + buildProjectSection()
-    + buildSelectionSection()
     + buildIconsSection()
-    + buildActionArea();
+    + `</div>`
+    + buildActionButton();
 }
 
 function buildSettings() {
   const saved = !!state.cookie;
+  const proxyHelpOpen = state.showProxyHelp === null
+    ? !state.proxyUrl
+    : state.showProxyHelp;
   return `<div class="settings-overlay">
     <div class="settings-header">
       <span class="settings-title">设置</span>
@@ -170,12 +246,30 @@ function buildSettings() {
     <div class="settings-body">
       <div class="settings-label">iconfont Cookie</div>
       <div class="settings-hint">
-        ① 终端运行：<code>node proxy.js</code>（保持运行）<br>
-        ② 打开 iconfont.cn → 登录 → F12 → Network →<br>
-        　 任意请求 → 复制 Cookie 请求头粘贴到此处
+        打开 iconfont.cn → 登录 → F12 → Network →<br>
+        任意请求 → 复制 Cookie 请求头粘贴到此处
       </div>
       <textarea class="cookie-input" id="cookie-input"
         placeholder="cna=xxx; iconfont_token=xxx; ...">${esc(state.cookie)}</textarea>
+      <div style="height:12px;"></div>
+      <div class="settings-label" style="display:flex;justify-content:space-between;align-items:center;">
+        代理地址
+        <span class="download-link" id="btn-toggle-proxy-help" style="font-size:10px;text-transform:none;letter-spacing:0;">
+          ${proxyHelpOpen ? '收起说明 ▲' : '部署说明 ▼'}
+        </span>
+      </div>
+      ${proxyHelpOpen ? `<div class="settings-hint">
+        插件需要一个 CORS 代理才能访问 iconfont.cn，推荐自行部署 Cloudflare Worker（免费）：<br><br>
+        ① <span class="download-link" id="btn-download-worker">下载 worker.js</span><br>
+        ② 登录 <b>dash.cloudflare.com</b><br>
+        ③ Workers &amp; Pages → Create → Create Worker<br>
+        ④ 选 <b>Hello World</b> 模板，起名后点"部署"<br>
+        ⑤ 进入"编辑代码"，全选删除，粘贴 worker.js 内容，再次"部署"<br>
+        ⑥ 复制 Worker 地址（xxx.workers.dev）填入下方
+      </div>` : ''}
+      <input type="text" id="proxy-input"
+        placeholder="https://xxx.workers.dev（留空则使用本地 proxy.js）"
+        value="${esc(state.proxyUrl)}" />
       <div class="settings-footer">
         <span class="cookie-status ${saved ? 'saved' : 'empty'}">${saved ? '● 已保存' : '● 未配置'}</span>
         <div style="display:flex;gap:6px;">
@@ -196,12 +290,12 @@ function buildProjectSection() {
   }
   if (state.projectsError) {
     const isAuth = isAuthError(state.projectsError);
-    const isProxy = isProxyError(state.projectsError);
+    const isNet = isNetworkError(state.projectsError);
     return `<div class="section">
       <div class="section-label">项目</div>
       <div class="error-box">
-        <div class="error-box-title">${isProxy ? '代理未运行' : isAuth ? 'Cookie 已过期' : '加载项目失败'}</div>
-        <div class="error-box-msg">${isProxy ? '请在终端运行 node proxy.js' : isAuth ? '' : esc(state.projectsError)}
+        <div class="error-box-title">${isAuth ? 'Cookie 已过期' : isNet ? '网络请求失败' : '加载项目失败'}</div>
+        <div class="error-box-msg">${isNet ? '请检查网络连接后重试' : isAuth ? '' : esc(state.projectsError)}
           ${isAuth ? '<span class="error-link" id="btn-reauth">重新配置</span>' : ''}
         </div>
       </div>
@@ -219,22 +313,6 @@ function buildProjectSection() {
   return `<div class="section">
     <div class="section-label">项目</div>
     <select id="project-select">${opts}</select>
-  </div>`;
-}
-
-function buildSelectionSection() {
-  const inner = state.figmaNode
-    ? `<div class="figma-node">
-         <div class="figma-node-thumb"></div>
-         <div>
-           <div class="figma-node-name">${esc(state.figmaNode.name)}</div>
-           <div class="figma-node-hint">Frame · 已就绪</div>
-         </div>
-       </div>`
-    : `<div class="no-selection">请在 Figma 中选中一个图标</div>`;
-  return `<div class="section">
-    <div class="section-label">当前选中（Figma）</div>
-    ${inner}
   </div>`;
 }
 
@@ -265,7 +343,7 @@ function buildIconsSection() {
     body = `<div class="icon-grid">${cells}</div>`;
   }
 
-  return `<div class="section">
+  return `<div class="section section-icons">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div class="section-label" style="margin-bottom:0;">iconfont 图标</div>
       <span class="icon-count">共 ${state.icons.length} 个</span>
@@ -276,30 +354,94 @@ function buildIconsSection() {
   </div>`;
 }
 
+function buildUploadNodesSection() {
+  if (state.figmaNodes.length === 0) {
+    return '<div class="section section-icons">' +
+      '<div class="section-label">选中的图标</div>' +
+      '<div class="empty-icons">请在 Figma 中选中要上传的图标（支持多选）</div>' +
+    '</div>';
+  }
+  const items = state.figmaNodes.map(n => {
+    const svg = state.figmaNodeSvgs[n.id];
+    const fontClass = state.uploadFontClasses[n.id] || '';
+    return '<div class="upload-node-row">' +
+      '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
+      '<div class="upload-node-info">' +
+        '<div class="upload-node-name">' + esc(n.name) + '</div>' +
+        '<input class="upload-node-class" data-node-id="' + n.id + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  return '<div class="section section-icons">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+      '<div class="section-label" style="margin-bottom:0;">选中的图标</div>' +
+      '<span class="icon-count">共 ' + state.figmaNodes.length + ' 个</span>' +
+    '</div>' +
+    '<div class="upload-nodes-list">' + items + '</div>' +
+  '</div>';
+}
+
+const SVG_FIGMA = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 6C5 3.79086 6.79086 2 9 2H15C17.2091 2 19 3.79086 19 6C19 7.19469 18.4762 8.26706 17.6458 9C18.4762 9.73295 19 10.8053 19 12C19 14.2091 17.2091 16 15 16C14.2714 16 13.5883 15.8052 13 15.4649V18C13 20.2091 11.2091 22 9 22C6.79086 22 5 20.2091 5 18C5 16.8053 5.52376 15.7329 6.35418 15C5.52376 14.2671 5 13.1947 5 12C5 10.8053 5.52376 9.73295 6.35418 9C5.52376 8.26706 5 7.19469 5 6ZM11 10H9C7.89543 10 7 10.8954 7 12C7 13.1046 7.89543 14 9 14H11V10ZM13 12C13 13.1046 13.8954 14 15 14C16.1046 14 17 13.1046 17 12C17 10.8954 16.1046 10 15 10C13.8954 10 13 10.8954 13 12ZM15 8C16.1046 8 17 7.10457 17 6C17 4.89543 16.1046 4 15 4H13V8H15ZM9 4C7.89543 4 7 4.89543 7 6C7 7.10457 7.89543 8 9 8H11V4H9ZM11 16H9C7.89543 16 7 16.8954 7 18C7 19.1046 7.89543 20 9 20C10.1046 20 11 19.1046 11 18V16Z"></path></svg>';
+const SVG_CURSOR = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.49983 0.5C10.8804 0.500214 11.9998 1.61942 11.9998 3V6.80273C12.555 6.60536 13.1777 6.56765 13.8026 6.74121L18.8026 8.12988C20.1008 8.49069 20.9998 9.67301 20.9998 11.0205V15.501C20.9994 19.6427 17.6415 23.0008 13.4998 23.001C11.0416 23.001 9.17132 22.3082 7.68342 21.002C6.23362 19.7289 5.22494 17.938 4.33381 15.9014C3.40397 13.7762 2.88937 12.4806 2.6092 11.7236C2.25279 10.7598 2.7463 9.41299 4.08577 9.31934L4.33381 9.30859C5.38149 9.29414 6.27675 9.66016 6.99983 10.2598V3C6.99983 1.61929 8.11912 0.5 9.49983 0.5ZM9.49983 2.5C9.22369 2.5 8.99983 2.72386 8.99983 3V14H8.00471L7.01936 14.1973C6.67148 12.4577 5.68476 11.4506 4.59748 11.3252C4.88153 12.0703 5.36224 13.2629 6.16584 15.0996C7.02454 17.0621 7.89139 18.5224 9.00374 19.499C10.0782 20.4421 11.4587 21.001 13.4998 21.001C16.537 21.0008 18.9994 18.538 18.9998 15.501V11.0205C18.9998 10.5714 18.7001 10.177 18.2674 10.0566L13.2674 8.66797C12.6304 8.49101 12.0001 8.96976 11.9998 9.63086V11H9.99983V3C9.99983 2.72397 9.77581 2.50019 9.49983 2.5Z"></path></svg>';
+
 function buildActionArea() {
-  const ready = !!state.figmaNode && !!state.selectedIcon;
-  const info = ready
-    ? `<b>${esc(state.figmaNode.name)}</b> → <span class="target">${esc(state.selectedIcon.font_class)}</span>`
-    : `<span style="color:#9ca3af;">选中 Figma 图标和目标图标后替换</span>`;
-  const errorHtml = state.replaceError
-    ? `<div class="error-box" style="margin-bottom:8px;">
-         <div class="error-box-title">⚠ 替换失败</div>
-         <div class="error-box-msg">${state.replaceError}
-           ${isAuthError(state.replaceError) ? '<span class="error-link" id="btn-reauth-replace">重新配置</span>' : ''}
-         </div>
-       </div>`
-    : '';
-  const btnLabel = state.replacing
-    ? `<span class="spinner"></span> 替换中…`
-    : '替换';
-  return `<div class="action-area">
-    <div class="replace-info">${info}</div>
-    ${errorHtml}
-    <button class="btn-replace ${state.replacing ? 'replacing' : ''}"
-      id="btn-replace" ${ready && !state.replacing ? '' : 'disabled'}>
-      ${btnLabel}
-    </button>
-  </div>`;
+  const leftThumb = state.figmaNode
+    ? '<div class="replace-thumb"><div class="replace-thumb-icon">' +
+        (state.figmaNodeSvg ? sanitizeSvgPreview(state.figmaNodeSvg) : '') +
+      '</div><div class="replace-thumb-label" title="' + esc(state.figmaNode.name) + '">' + esc(state.figmaNode.name) + '</div></div>'
+    : '<div class="replace-thumb empty"><div class="replace-thumb-icon" style="color:#d1d5db;">' + SVG_FIGMA + '</div><div class="replace-thumb-label">选中 Figma 图标</div></div>';
+  const rightThumb = state.selectedIcon
+    ? '<div class="replace-thumb"><div class="replace-thumb-icon">' +
+        sanitizeSvgPreview(state.selectedIcon.show_svg || '') +
+      '</div><div class="replace-thumb-label" title="' + esc(state.selectedIcon.font_class) + '">' + esc(state.selectedIcon.font_class) + '</div></div>'
+    : '<div class="replace-thumb empty"><div class="replace-thumb-icon" style="color:#d1d5db;transform:rotate(180deg);">' + SVG_CURSOR + '</div><div class="replace-thumb-label">选择目标图标</div></div>';
+  return '<div class="action-area">' +
+    '<div class="replace-pair">' + leftThumb + '<div class="replace-arrow">→</div>' + rightThumb + '</div>' +
+  '</div>';
+}
+
+function buildActionButton() {
+  if (state.actionMode === 'replace') {
+    const ready = !!state.figmaNode && !!state.selectedIcon;
+    const errorHtml = state.replaceError
+      ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title">⚠ 替换失败</div>' +
+        '<div class="error-box-msg">' + esc(state.replaceError) +
+          (isAuthError(state.replaceError) ? '<span class="error-link" id="btn-reauth-replace">重新配置</span>' : '') +
+        '</div></div>'
+      : '';
+    const btnLabel = state.replacing ? '<span class="spinner"></span> 替换中…' : '替换';
+    return '<div class="action-footer">' + errorHtml +
+      '<button class="btn-replace ' + (state.replacing ? 'replacing' : '') + '" id="btn-replace" ' + (ready && !state.replacing ? '' : 'disabled') + '>' + btnLabel + '</button>' +
+    '</div>';
+  } else {
+    const ready = state.figmaNodes.length > 0 && state.figmaNodes.every(n => (state.uploadFontClasses[n.id] || '').trim());
+    const errorHtml = state.uploadError
+      ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title">⚠ 上传失败</div>' +
+        '<div class="error-box-msg">' + esc(state.uploadError) +
+          (isAuthError(state.uploadError) ? '<span class="error-link" id="btn-reauth-upload">重新配置</span>' : '') +
+        '</div></div>'
+      : '';
+    const btnLabel = state.uploading ? '<span class="spinner"></span> 上传中…' : '上传新图标';
+    return '<div class="action-footer">' + errorHtml +
+      '<button class="btn-replace ' + (state.uploading ? 'uploading' : '') + '" id="btn-upload" ' + (ready && !state.uploading ? '' : 'disabled') + '>' + btnLabel + '</button>' +
+    '</div>';
+  }
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(message, type) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  if (_toastTimer) clearTimeout(_toastTimer);
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = message;
+  document.body.appendChild(el);
+  _toastTimer = setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────
@@ -319,12 +461,11 @@ function isAuthError(msg) {
     || s.includes('cookie') || s.includes('过期');
 }
 
-function isProxyError(msg) {
+function isNetworkError(msg) {
   if (!msg) return false;
   const s = msg.toLowerCase();
   return s.includes('econnrefused') || s.includes('failed to fetch')
-    || s.includes('networkerror') || s.includes('502')
-    || s.includes('超时') || s.includes('timeout');
+    || s.includes('networkerror') || s.includes('超时') || s.includes('timeout');
 }
 
 // Strip script tags from show_svg for safety; Figma iframe sandbox limits script execution
@@ -338,6 +479,12 @@ function sanitizeSvgPreview(svgStr) {
 
 // ── BIND EVENTS ──────────────────────────────────────────────────
 function bindEvents() {
+  on('btn-download-worker', 'click', downloadWorker);
+  on('btn-toggle-proxy-help', 'click', () => {
+    const proxyHelpOpen = state.showProxyHelp === null ? !state.proxyUrl : state.showProxyHelp;
+    state.showProxyHelp = !proxyHelpOpen;
+    render();
+  });
   on('btn-settings', 'click', () => { state.showSettings = true; render(); });
   on('btn-settings-close', 'click', () => { state.showSettings = false; render(); });
   on('btn-save-cookie', 'click', saveCookie);
@@ -354,9 +501,19 @@ function bindEvents() {
   });
   on('btn-retry-icons', 'click', loadIcons);
   on('btn-replace', 'click', doReplace);
+  on('tab-replace', 'click', () => { state.actionMode = 'replace'; state.uploadError = null; render(); });
+  on('tab-upload', 'click', () => { state.actionMode = 'upload'; state.replaceError = null; render(); });
+  on('btn-upload', 'click', doUpload);
+  on('btn-reauth-upload', 'click', () => { state.showSettings = true; render(); });
 
   document.querySelectorAll('.icon-cell').forEach(cell => {
     cell.addEventListener('click', () => onIconClick(cell.dataset.id));
+  });
+  document.querySelectorAll('.upload-node-class').forEach(input => {
+    input.addEventListener('input', (e) => {
+      state.uploadFontClasses[e.target.dataset.nodeId] = e.target.value;
+      state.uploadError = null;
+    });
   });
 }
 
@@ -369,8 +526,11 @@ function on(id, event, handler) {
 function saveCookie() {
   const input = document.getElementById('cookie-input');
   const val = (input ? input.value : '').trim();
+  const proxyInput = document.getElementById('proxy-input');
+  const proxyVal = (proxyInput ? proxyInput.value : '').trim().replace(/\/$/, '');
   state.cookie = val;
-  postToCode({ type: 'save-storage', cookie: val });
+  state.proxyUrl = proxyVal;
+  postToCode({ type: 'save-storage', cookie: val, proxyUrl: proxyVal });
   state.showSettings = false;
   if (val) {
     state.view = 'MAIN';
@@ -417,16 +577,16 @@ async function loadProjects() {
   try {
     const projects = await IconfontAPI.getProjects(state.cookie);
     state.projects = projects;
+    state.projectsLoading = false;  // clear before loadIcons renders
     if (projects.length > 0) {
       const match = projects.find(p => String(p.id) === String(state.selectedPid));
       state.selectedPid = String(match ? match.id : projects[0].id);
       postToCode({ type: 'save-storage', lastPid: state.selectedPid });
       await loadIcons();
-      return; // loadIcons calls render at the end
+      return;
     }
   } catch (e) {
     state.projectsError = e.message;
-  } finally {
     state.projectsLoading = false;
   }
   render();
@@ -458,15 +618,55 @@ async function doReplace() {
   postToCode({ type: 'export-svg', nodeId: state.figmaNode.id });
 }
 
+async function doUpload() {
+  if (state.figmaNodes.length === 0 || state.uploading) return;
+  const allFilled = state.figmaNodes.every(n => (state.uploadFontClasses[n.id] || '').trim());
+  if (!allFilled) return;
+  state.uploading = true;
+  state.uploadError = null;
+  render();
+  postToCode({ type: 'export-svgs-batch', nodeIds: state.figmaNodes.map(n => n.id) });
+}
+
+async function handleBatchUpload(results) {
+  let errorMsg = null;
+  let successCount = 0;
+  for (const r of results) {
+    if (r.error) { errorMsg = r.error; break; }
+    const fontClass = (state.uploadFontClasses[r.nodeId] || '').trim();
+    try {
+      await IconfontAPI.uploadIcon(state.cookie, cleanSvg(r.svg), fontClass, state.selectedPid);
+      successCount++;
+    } catch (e) {
+      errorMsg = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
+      break;
+    }
+  }
+  state.uploading = false;
+  if (errorMsg) {
+    state.uploadError = (successCount > 0 ? '已上传 ' + successCount + ' 个，' : '') + errorMsg;
+    render();
+  } else {
+    showToast('已提交 ' + successCount + ' 个图标（需管理员审核后生效）', 'success');
+    state.uploadError = null;
+    state.figmaNodes = [];
+    state.figmaNode = null;
+    state.figmaNodeSvgs = {};
+    state.figmaNodeSvg = null;
+    state.uploadFontClasses = {};
+    render();
+  }
+}
+
 async function handleSvgExported(svgRaw) {
   try {
-    const svg = cleanSvg(svgRaw);
-    await IconfontAPI.replaceIcon(state.cookie, state.selectedIcon.id, svg);
-    postToCode({ type: 'notify', message: `✅ 已替换：${state.selectedIcon.font_class}` });
+    await IconfontAPI.replaceIcon(state.cookie, state.selectedIcon.id, svgRaw);
+    showToast('已替换：' + state.selectedIcon.font_class, 'success');
     state.replaceError = null;
+    state.replacing = false;
+    await loadIcons();
   } catch (e) {
     state.replaceError = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
-  } finally {
     state.replacing = false;
     render();
   }
@@ -496,6 +696,100 @@ function cleanSvg(svgString) {
   return new XMLSerializer().serializeToString(svg);
 }
 
+// ── WORKER DOWNLOAD ──────────────────────────────────────────────
+const WORKER_JS = `/**
+ * Iconfont Replacer — Cloudflare Worker CORS 代理
+ * ================================================
+ *
+ * 这是 Iconfont Replacer Figma 插件所需的代理服务。
+ * 由于浏览器安全限制，插件无法直接访问 iconfont.cn，
+ * 需要通过此代理转发请求。你的数据只经过你自己部署的服务器。
+ *
+ * 【部署步骤】
+ *
+ * 1. 注册 / 登录 Cloudflare
+ *    https://dash.cloudflare.com
+ *    （免费账号即可，无需绑定信用卡）
+ *
+ * 2. 创建 Worker
+ *    左侧菜单 → Workers & Pages → Create → Create Worker
+ *    选择 "Hello World" 模板，随便起个名字（如 iconfont-proxy）
+ *    点击"部署"完成初始创建
+ *
+ * 3. 粘贴代码
+ *    部署完成后点击"编辑代码"
+ *    全选编辑器内已有内容，删除
+ *    粘贴本文件全部内容，点击右上角"部署"
+ *
+ * 4. 复制 Worker 地址
+ *    形如 https://iconfont-proxy.你的用户名.workers.dev
+ *
+ * 5. 填入插件设置
+ *    打开 Figma → Iconfont Replacer 插件 → 右上角 ⚙
+ *    将 Worker 地址粘贴到"代理地址"输入框，点击保存
+ *
+ * 【免费额度】
+ *    Cloudflare Worker 免费套餐：每天 100,000 次请求
+ *    日常设计团队使用完全够用
+ *
+ * 【隐私说明】
+ *    本代理仅转发请求到 iconfont.cn，不记录、不存储任何数据。
+ *    你的 Cookie 只经过你自己部署的 Worker，不经过任何第三方。
+ */
+
+const TARGET = 'https://www.iconfont.cn';
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Cookie, Referer',
+};
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS });
+  }
+
+  const url = new URL(request.url);
+  const target = TARGET + url.pathname + url.search;
+
+  const headers = new Headers(request.headers);
+  if (headers.has('x-cookie')) {
+    headers.set('cookie', headers.get('x-cookie'));
+    headers.delete('x-cookie');
+  }
+  headers.set('host', 'www.iconfont.cn');
+
+  const upstream = await fetch(target, {
+    method: request.method,
+    headers: headers,
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+  });
+
+  const resHeaders = new Headers(upstream.headers);
+  for (const key in CORS) resHeaders.set(key, CORS[key]);
+  resHeaders.delete('transfer-encoding');
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: resHeaders,
+  });
+}`;
+
+function downloadWorker() {
+  const blob = new Blob([WORKER_JS], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'worker.js';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── API BRIDGE ───────────────────────────────────────────────────
 // Routes IconfontAPI calls through code.js to bypass UI iframe CORS restrictions
 let _reqId = 0;
@@ -505,7 +799,7 @@ function apiCall(type, params) {
   return new Promise((resolve, reject) => {
     const id = ++_reqId;
     _pending[id] = { resolve, reject };
-    postToCode({ type, id, ...params });
+    postToCode({ type, id, proxyUrl: state.proxyUrl, ...params });
     setTimeout(() => {
       if (_pending[id]) {
         delete _pending[id];
@@ -518,23 +812,42 @@ function apiCall(type, params) {
 // ── ICONFONT API ─────────────────────────────────────────────────
 // All requests are proxied through code.js (main thread) to bypass CORS.
 const IconfontAPI = {
-  // ⚠️ 待验证：返回结构 (data.corpProjects / data.projects)
+  // Combines personal projects (data.projects) and corp/team projects (data.corpProjects)
   async getProjects(cookie) {
     const json = await apiCall('api-get-projects', { cookie });
     if (json.code !== 200) throw new Error(json.message || '获取项目列表失败，请检查 Cookie');
-    return (json.data && (json.data.corpProjects || json.data.projects)) || [];
+    const d = json.data || {};
+    const all = [
+      ...(d.ownProjects || []),
+      ...(d.corpProjects || []),
+    ];
+    return all;
   },
 
-  // ⚠️ 待验证：data.icons 字段名、show_svg 字段是否存在
   async getIcons(cookie, pid) {
     const json = await apiCall('api-get-icons', { cookie, pid });
     if (json.code !== 200) throw new Error(json.message || '获取图标列表失败');
-    return (json.data && json.data.icons) || [];
+    const icons = (json.data && json.data.icons) || [];
+    return icons;
   },
 
-  // ⚠️ 待验证：Body 格式（urlencoded / JSON / multipart）和字段名
-  async replaceIcon(cookie, iconId, svg) {
-    const json = await apiCall('api-replace-icon', { cookie, iconId, svg });
+  async uploadIcon(cookie, originSvg, fontClass, pid) {
+    const json = await apiCall('api-upload-icon', { cookie, originSvg, fontClass, pid });
+    if (json.code !== 200) throw new Error(json.message || '上传失败');
+    return json;
+  },
+
+  async replaceIcon(cookie, iconId, originSvg) {
+    const icon = state.selectedIcon;
+    const json = await apiCall('api-replace-icon', {
+      cookie,
+      iconId,
+      originSvg,
+      pid: state.selectedPid,
+      fontClass: icon.font_class,
+      unicode: icon.unicode,
+      iconName: icon.name || icon.font_class,
+    });
     if (json.code !== 200) throw new Error(json.message || '替换失败');
     return json;
   },
@@ -553,15 +866,44 @@ window.onmessage = async (event) => {
     case 'storage-loaded':
       state.cookie = msg.cookie || '';
       state.selectedPid = msg.lastPid || '';
+      state.proxyUrl = msg.proxyUrl || '';
       state.view = state.cookie ? 'MAIN' : 'NO_COOKIE';
       render();
       if (state.cookie) loadProjects();
       break;
 
-    case 'selection-changed':
-      state.figmaNode = msg.node || null;
+    case 'selection-changed': {
+      const nodes = msg.nodes || [];
+      state.figmaNodes = nodes;
+      state.figmaNode = nodes[0] || null;
+      state.figmaNodeSvgs = {};
+      state.figmaNodeSvg = null;
       state.replaceError = null;
+      // Auto-fill font classes for new upload nodes
+      nodes.forEach(n => {
+        if (!state.uploadFontClasses[n.id]) {
+          state.uploadFontClasses[n.id] = n.name
+            .toLowerCase()
+            .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        }
+      });
       render();
+      // Request previews for all nodes
+      nodes.forEach(n => {
+        postToCode({ type: 'export-svg-preview', nodeId: n.id });
+      });
+      break;
+    }
+
+    case 'svg-preview':
+      if (!msg.error) {
+        state.figmaNodeSvgs[msg.nodeId] = msg.svg;
+        if (state.figmaNode && msg.nodeId === state.figmaNode.id) {
+          state.figmaNodeSvg = msg.svg;
+        }
+        render();
+      }
       break;
 
     case 'svg-exported':
@@ -571,6 +913,12 @@ window.onmessage = async (event) => {
         render();
       } else {
         await handleSvgExported(msg.svg);
+      }
+      break;
+
+    case 'svgs-batch-exported':
+      if (state.uploading) {
+        await handleBatchUpload(msg.results);
       }
       break;
 
