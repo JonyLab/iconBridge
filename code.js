@@ -1,5 +1,5 @@
 // code.js — Figma main thread
-figma.showUI(__html__, { width: 320, height: 600, title: 'Iconfont Replacer' });
+figma.showUI(__html__, { width: 320, height: 600, title: 'IconBridge' });
 
 const DEFAULT_PROXY = 'http://localhost:17788';
 
@@ -17,6 +17,31 @@ async function loadStorage() {
   figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl });
 }
 loadStorage();
+
+// Drag-to-canvas: try figma.on('drop') for exact cursor position, fallback to viewport center
+let _dropHandled = false;
+try {
+  figma.on('drop', (event) => {
+    const textItem = event.items && event.items.find(i => i.type === 'text/plain');
+    if (!textItem || !textItem.data) return;
+    let data;
+    try { data = JSON.parse(textItem.data); } catch (_) { return; }
+    if (!data || !data.svg) return;
+    try {
+      const node = figma.createNodeFromSvg(data.svg);
+      node.name = data.name || 'icon';
+      node.resize(48, 48);
+      node.x = event.absoluteX - 24;
+      node.y = event.absoluteY - 24;
+      figma.currentPage.selection = [node];
+      _dropHandled = true;
+      setTimeout(() => { _dropHandled = false; }, 500);
+    } catch (e) {
+      figma.notify('插入失败：' + e.message, { error: true });
+    }
+    return false;
+  });
+} catch (_) { /* drop event not supported, dragend fallback will handle it */ }
 
 // Notify UI whenever selection changes
 figma.on('selectionchange', () => {
@@ -86,13 +111,14 @@ figma.ui.onmessage = async (msg) => {
       break;
     }
     case 'create-node-from-svg': {
+      if (_dropHandled) { _dropHandled = false; break; }
       try {
         const node = figma.createNodeFromSvg(msg.svg);
         node.name = msg.name || 'icon';
-        // Center in viewport
+        node.resize(48, 48);
         const vp = figma.viewport.center;
-        node.x = vp.x - node.width / 2;
-        node.y = vp.y - node.height / 2;
+        node.x = vp.x - 24;
+        node.y = vp.y - 24;
         figma.currentPage.selection = [node];
         figma.viewport.scrollAndZoomIntoView([node]);
       } catch (e) {

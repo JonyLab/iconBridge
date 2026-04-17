@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8"/>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.min.css" rel="stylesheet"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; color: #374151; background: #fff; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -60,8 +61,8 @@ select:focus, input:focus { border-color: #3b82f6; }
 .icon-cell { background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 2px solid transparent; padding: 3px 3px 4px; overflow: hidden; }
 .icon-cell:hover { background: #e5e7eb; }
 .icon-cell.selected { background: #eff6ff; border-color: #3b82f6; }
-.icon-preview { display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; min-height: 0; }
-.icon-preview svg { width: 20px; height: 20px; flex-shrink: 0; display: block; overflow: visible !important; }
+.icon-preview { display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; min-height: 0; width: 28px; height: 28px; }
+.icon-preview svg { width: 20px !important; height: 20px !important; flex-shrink: 0; display: block; overflow: visible !important; }
 .icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
 .icon-cell.selected .icon-name { color: #3b82f6; }
 .empty-icons { padding: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
@@ -70,7 +71,7 @@ select:focus, input:focus { border-color: #3b82f6; }
 .action-area { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
 .action-footer { padding: 10px 12px; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
 .replace-pair { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
-.replace-thumb { width: 72px; height: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: #f3f4f6; border-radius: 8px; padding: 4px 4px 4px; }
+.replace-thumb { width: 72px; height: 72px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 4px 4px 4px; }
 .replace-thumb.empty { border: 1px dashed #d1d5db; background: transparent; }
 .replace-thumb-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; }
 .replace-thumb-icon svg { width: 100% !important; height: 100% !important; display: block; overflow: visible !important; }
@@ -207,17 +208,17 @@ function esc(s) {
 
 function buildHeader() {
   return `<div class="header">
-    <span class="header-title">Iconfont Replacer</span>
-    <button class="btn-icon" id="btn-settings" title="设置">⚙</button>
+    <span class="header-title">IconBridge</span>
+    <button class="btn-icon" id="btn-settings" title="设置"><i class="ri-settings-3-line"></i></button>
   </div>`;
 }
 
 function buildNoCookie() {
   return buildHeader() + `
   <div class="empty-view">
-    <div class="empty-view-icon">🔑</div>
+    <div class="empty-view-icon"><i class="ri-key-line"></i></div>
     <div class="empty-view-title">请先配置 Cookie</div>
-    <div class="empty-view-desc">点击右上角 ⚙ 填写 iconfont.cn 的 Cookie</div>
+    <div class="empty-view-desc">点击右上角 <i class="ri-settings-3-line"></i> 填写 iconfont.cn 的 Cookie</div>
   </div>`;
 }
 
@@ -227,8 +228,7 @@ function buildMain() {
     + buildProjectSection()
     + buildIconsSection()
     + `</div>`
-    + (state.replaceMode ? buildReplacePreview() : '')
-    + buildBottomBar();
+    + (state.replaceMode ? buildReplacePreview() : buildBottomBar());
 }
 
 function buildSettings() {
@@ -239,7 +239,7 @@ function buildSettings() {
   return `<div class="settings-overlay">
     <div class="settings-header">
       <span class="settings-title">设置</span>
-      <button class="btn-icon" id="btn-settings-close">✕</button>
+      <button class="btn-icon" id="btn-settings-close"><i class="ri-close-line"></i></button>
     </div>
     <div class="settings-body">
       <div class="settings-label">iconfont Cookie</div>
@@ -322,7 +322,7 @@ function buildIconsSection() {
     body = `<div class="loading-row"><span class="spinner"></span> 正在加载图标…</div>`;
   } else if (state.iconsError) {
     body = `<div class="error-box">
-      <div class="error-box-title">⚠ 加载图标失败</div>
+      <div class="error-box-title"><i class="ri-alert-line"></i> 加载图标失败</div>
       <div class="error-box-msg">${esc(state.iconsError)}</div>
     </div>
     <button class="btn-retry" id="btn-retry-icons">重试</button>`;
@@ -346,8 +346,11 @@ function buildIconsSection() {
       <div class="section-label" style="margin-bottom:0;">图标库</div>
       <span class="icon-count">共 ${state.icons.length} 个</span>
     </div>
-    <input class="search-input" id="search-input" placeholder="🔍 搜索 font class…"
-      value="${esc(state.searchQuery)}" />
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <input class="search-input" id="search-input" style="margin-bottom:0;flex:1;" placeholder="搜索 font class…"
+        value="${esc(state.searchQuery)}" />
+      <button class="btn-primary" id="btn-goto-upload" style="white-space:nowrap;flex-shrink:0;">上传</button>
+    </div>
     ${body}
   </div>`;
 }
@@ -355,14 +358,12 @@ function buildIconsSection() {
 const SVG_FIGMA = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5 6C5 3.79086 6.79086 2 9 2H15C17.2091 2 19 3.79086 19 6C19 7.19469 18.4762 8.26706 17.6458 9C18.4762 9.73295 19 10.8053 19 12C19 14.2091 17.2091 16 15 16C14.2714 16 13.5883 15.8052 13 15.4649V18C13 20.2091 11.2091 22 9 22C6.79086 22 5 20.2091 5 18C5 16.8053 5.52376 15.7329 6.35418 15C5.52376 14.2671 5 13.1947 5 12C5 10.8053 5.52376 9.73295 6.35418 9C5.52376 8.26706 5 7.19469 5 6ZM11 10H9C7.89543 10 7 10.8954 7 12C7 13.1046 7.89543 14 9 14H11V10ZM13 12C13 13.1046 13.8954 14 15 14C16.1046 14 17 13.1046 17 12C17 10.8954 16.1046 10 15 10C13.8954 10 13 10.8954 13 12ZM15 8C16.1046 8 17 7.10457 17 6C17 4.89543 16.1046 4 15 4H13V8H15ZM9 4C7.89543 4 7 4.89543 7 6C7 7.10457 7.89543 8 9 8H11V4H9ZM11 16H9C7.89543 16 7 16.8954 7 18C7 19.1046 7.89543 20 9 20C10.1046 20 11 19.1046 11 18V16Z"></path></svg>';
 
 function buildBottomBar() {
-  const canReplace = !!state.selectedIcon;
-  const replaceLabel = state.selectedIcon
-    ? '替换 <span style="font-weight:400;opacity:0.8;">' + esc(state.selectedIcon.font_class) + '</span>'
-    : '替换';
+  if (!state.selectedIcon) return '';
+  const replaceLabel = '替换 <span style="font-weight:400;opacity:0.8;">' + esc(state.selectedIcon.font_class) + '</span>';
   return '<div class="action-footer">' +
     '<div style="display:flex;gap:8px;">' +
-      '<button class="btn-action-bar" id="btn-replace" ' + (canReplace ? '' : 'disabled') + '>' + replaceLabel + '</button>' +
-      '<button class="btn-action-bar btn-action-secondary" id="btn-goto-upload">上传</button>' +
+      '<button class="btn-action-bar" id="btn-replace">' + replaceLabel + '</button>' +
+      '<button class="btn-action-bar btn-action-secondary" id="btn-insert-figma">放入 Figma</button>' +
     '</div>' +
   '</div>';
 }
@@ -380,7 +381,7 @@ function buildReplacePreview() {
 
   const ready = hasNode && !!state.selectedIcon;
   const errorHtml = state.replaceError
-    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title">⚠ 替换失败</div>' +
+    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> 替换失败</div>' +
       '<div class="error-box-msg">' + esc(state.replaceError) +
         (isAuthError(state.replaceError) ? '<span class="error-link" id="btn-reauth-replace">重新配置</span>' : '') +
       '</div></div>'
@@ -391,9 +392,9 @@ function buildReplacePreview() {
     '<div class="replace-pair">' + leftThumb + '<div class="replace-arrow">→</div>' + rightThumb + '</div>' +
     (!hasNode ? '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-bottom:8px;">请在 Figma 中选择图标节点</div>' : '') +
     errorHtml +
-    '<div style="display:flex;gap:6px;">' +
-      '<button class="btn-replace ' + (state.replacing ? 'replacing' : '') + '" id="btn-confirm-replace" ' + (ready && !state.replacing ? '' : 'disabled') + '>' + btnLabel + '</button>' +
-      '<button class="btn-secondary" id="btn-cancel-replace">取消</button>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<button class="btn-action-bar ' + (state.replacing ? 'replacing' : '') + '" id="btn-confirm-replace" ' + (ready && !state.replacing ? '' : 'disabled') + '>' + btnLabel + '</button>' +
+      '<button class="btn-action-bar btn-action-secondary" id="btn-cancel-replace" style="white-space:nowrap;">取消</button>' +
     '</div>' +
   '</div>';
 }
@@ -401,7 +402,7 @@ function buildReplacePreview() {
 function buildUploadPage() {
   const projectName = state.projects.find(p => String(p.id) === String(state.selectedPid));
   const header = '<div class="sub-header">' +
-    '<button class="btn-back" id="btn-upload-back">←</button>' +
+    '<button class="btn-back" id="btn-upload-back"><i class="ri-arrow-left-line"></i></button>' +
     '<span class="sub-header-title">上传新图标</span>' +
   '</div>';
   const projectHint = projectName
@@ -411,7 +412,7 @@ function buildUploadPage() {
   let body = '';
   if (state.figmaNodes.length === 0) {
     body = '<div class="upload-empty">' +
-      '<div style="font-size:28px;color:#d1d5db;margin-bottom:8px;">' + SVG_FIGMA + '</div>' +
+      '<div style="width:48px;height:48px;color:#d1d5db;margin:0 auto 8px;">' + SVG_FIGMA + '</div>' +
       '<div style="font-size:12px;font-weight:500;margin-bottom:4px;">请在 Figma 中选择图标</div>' +
       '<div style="font-size:10px;color:#9ca3af;">支持多选，选中后将显示在此处</div>' +
     '</div>';
@@ -422,8 +423,8 @@ function buildUploadPage() {
       return '<div class="upload-node-row">' +
         '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
         '<div class="upload-node-info">' +
-          '<div class="upload-node-name">' + esc(n.name) + '</div>' +
-          '<input class="upload-node-class" data-node-id="' + esc(n.id) + '" placeholder="font_class" value="' + esc(fontClass) + '" />' +
+          '<div class="upload-node-name">图标名 / font class</div>' +
+          '<input class="upload-node-class" data-node-id="' + esc(n.id) + '" placeholder="' + esc(n.name) + '" value="' + esc(fontClass) + '" />' +
         '</div>' +
       '</div>';
     }).join('');
@@ -438,7 +439,7 @@ function buildUploadPage() {
 
   const ready = state.figmaNodes.length > 0 && state.figmaNodes.every(n => (state.uploadFontClasses[n.id] || '').trim());
   const errorHtml = state.uploadError
-    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title">⚠ 上传失败</div>' +
+    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> 上传失败</div>' +
       '<div class="error-box-msg">' + esc(state.uploadError) +
         (isAuthError(state.uploadError) ? '<span class="error-link" id="btn-reauth-upload">重新配置</span>' : '') +
       '</div></div>'
@@ -453,6 +454,12 @@ function buildUploadPage() {
 }
 
 // ── TOAST ────────────────────────────────────────────────────────
+// Track whether a drag has left the plugin iframe (→ dropped on Figma canvas)
+let _dragLeftIframe = false;
+document.addEventListener('dragleave', (e) => {
+  if (e.relatedTarget === null) _dragLeftIframe = true;
+});
+
 let _toastTimer = null;
 function showToast(message, type) {
   const existing = document.querySelector('.toast');
@@ -540,6 +547,12 @@ function bindEvents() {
   });
   on('btn-confirm-replace', 'click', doReplace);
 
+  // Main page: insert selected icon to Figma canvas center
+  on('btn-insert-figma', 'click', () => {
+    if (!state.selectedIcon || !state.selectedIcon.show_svg) return;
+    postToCode({ type: 'create-node-from-svg', svg: sanitizeSvgPreview(state.selectedIcon.show_svg), name: state.selectedIcon.font_class });
+  });
+
   // Main page: navigate to upload
   on('btn-goto-upload', 'click', () => {
     state.view = 'UPLOAD';
@@ -561,13 +574,16 @@ function bindEvents() {
   document.querySelectorAll('.icon-cell').forEach(cell => {
     cell.addEventListener('click', () => onIconClick(cell.dataset.id));
     cell.addEventListener('dragstart', (e) => {
+      _dragLeftIframe = false;
       const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
       if (!icon || !icon.show_svg) { e.preventDefault(); return; }
-      e.dataTransfer.setData('text/plain', icon.font_class);
+      const dragData = JSON.stringify({ svg: sanitizeSvgPreview(icon.show_svg), name: icon.font_class });
+      e.dataTransfer.setData('text/plain', dragData);
       e.dataTransfer.effectAllowed = 'copy';
     });
-    cell.addEventListener('dragend', (e) => {
-      if (e.dataTransfer.dropEffect === 'none') return;
+    cell.addEventListener('dragend', () => {
+      if (!_dragLeftIframe) return;
+      _dragLeftIframe = false;
       const icon = state.icons.find(ic => String(ic.id) === String(cell.dataset.id));
       if (icon && icon.show_svg) {
         postToCode({ type: 'create-node-from-svg', svg: sanitizeSvgPreview(icon.show_svg), name: icon.font_class });
@@ -769,10 +785,10 @@ function cleanSvg(svgString) {
 
 // ── WORKER DOWNLOAD ──────────────────────────────────────────────
 const WORKER_JS = `/**
- * Iconfont Replacer — Cloudflare Worker CORS 代理
+ * IconBridge — Cloudflare Worker CORS 代理
  * ================================================
  *
- * 这是 Iconfont Replacer Figma 插件所需的代理服务。
+ * 这是 IconBridge Figma 插件所需的代理服务。
  * 由于浏览器安全限制，插件无法直接访问 iconfont.cn，
  * 需要通过此代理转发请求。你的数据只经过你自己部署的服务器。
  *
@@ -796,7 +812,7 @@ const WORKER_JS = `/**
  *    形如 https://iconfont-proxy.你的用户名.workers.dev
  *
  * 5. 填入插件设置
- *    打开 Figma → Iconfont Replacer 插件 → 右上角 ⚙
+ *    打开 Figma → IconBridge 插件 → 右上角设置图标
  *    将 Worker 地址粘贴到"代理地址"输入框，点击保存
  *
  * 【免费额度】

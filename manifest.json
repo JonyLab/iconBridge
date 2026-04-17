@@ -1,10 +1,14 @@
 {
-  "name": "Iconfont Replacer",
-  "id": "iconfont-replacer-whale",
+  "name": "IconBridge",
+  "id": "1626816532856635929",
   "api": "1.0.0",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
   "main": "code.js",
   "ui": "ui.html",
   "networkAccess": {
-    "allowedDomains": ["https://www.iconfont.cn", "http://localhost:17788"]
+    "allowedDomains": ["*"],
+    "reasoning": "Users deploy their own CORS proxy (Cloudflare Worker) to relay requests to iconfont.cn. The proxy URL is configured by each user in plugin settings, so the exact domain cannot be known in advance.",
+    "devAllowedDomains": ["http://localhost:17788"]
   }
 }

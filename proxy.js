@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Iconfont Replacer — 本地 CORS 代理
+ * IconBridge — 本地 CORS 代理
  * 将请求转发到 www.iconfont.cn 并补充 CORS 响应头。
  * 使用方法：node proxy.js
  */
