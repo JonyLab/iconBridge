@@ -58,13 +58,21 @@ select:focus, input:focus { border-color: #3b82f6; }
 .icon-count { font-size: 10px; color: #6b7280; }
 .search-input { margin-bottom: 8px; }
 .icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 70px; gap: 4px; overflow-y: auto; flex: 1; min-height: 0; }
-.icon-cell { background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 2px solid transparent; padding: 3px 3px 4px; overflow: hidden; }
+.icon-cell { position: relative; background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 2px solid transparent; padding: 3px 3px 4px; overflow: hidden; }
 .icon-cell:hover { background: #e5e7eb; }
 .icon-cell.selected { background: #eff6ff; border-color: #3b82f6; }
+.icon-grid { position: relative; }
 .icon-preview { display: flex; align-items: center; justify-content: center; color: #374151; flex: 1; min-height: 0; width: 28px; height: 28px; }
-.icon-preview svg { width: 20px !important; height: 20px !important; flex-shrink: 0; display: block; overflow: visible !important; }
+.icon-preview svg { width: 20px !important; height: 20px !important; flex-shrink: 0; display: block; overflow: visible !important; transition: transform 500ms cubic-bezier(.5, .5, 0, 1); transform-origin: center; }
+.icon-cell:hover .icon-preview svg { transform: scale(1.8); }
+@keyframes icon-refresh-pop { 0% { transform: scale(0.2); opacity: 0; } 55% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes icon-cell-flash { 0% { background: #dbeafe; box-shadow: 0 0 0 2px #3b82f6 inset; } 100% { background: #f3f4f6; box-shadow: 0 0 0 0 transparent inset; } }
+.icon-cell.just-replaced { animation: icon-cell-flash 700ms ease-out; }
+.icon-cell.just-replaced .icon-preview svg { animation: icon-refresh-pop 520ms cubic-bezier(.5, .5, 0, 1); }
+.icon-cell.just-replaced:hover .icon-preview svg { animation: none; }
 .icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
 .icon-cell.selected .icon-name { color: #3b82f6; }
+#icon-name-tip { position: fixed; display: none; max-width: 200px; background: rgba(17,24,39,0.95); color: #fff; font-size: 10px; line-height: 1.35; padding: 3px 6px; border-radius: 4px; word-break: break-all; pointer-events: none; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .empty-icons { padding: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
 
 /* Action area */
@@ -155,6 +163,7 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 </head>
 <body>
 <div id="app"></div>
+<div id="icon-name-tip"></div>
 <script>
 // ── STATE ────────────────────────────────────────────────────────
 const state = {
@@ -182,12 +191,28 @@ const state = {
   uploadFontClasses: {},   // nodeId -> fontClass string
   uploading: false,
   uploadError: null,
+  // Historical-icon Y-flip fix flow (settings panel, hidden dev tool)
+  fixDevMode: false,       // toggled by 5-tap on settings blank area
+  fixTapCount: 0,
+  fixPhase: 'idle',        // 'idle' | 'scanning' | 'scanned' | 'fixing' | 'done'
+  fixScanned: 0,
+  fixTotal: 0,
+  fixBroken: [],
+  fixFixed: 0,
+  fixFailed: 0,
 };
 
 // ── RENDER ENTRY ─────────────────────────────────────────────────
+var _gridScrollTop = 0;
 function render() {
+  const grid = document.querySelector('.icon-grid');
+  if (grid) _gridScrollTop = grid.scrollTop;
   document.getElementById('app').innerHTML = buildHTML();
   bindEvents();
+  if (_gridScrollTop) {
+    const g = document.querySelector('.icon-grid');
+    if (g) g.scrollTop = _gridScrollTop;
+  }
 }
 
 function buildHTML() {
@@ -275,7 +300,43 @@ function buildSettings() {
           <button class="btn-primary" id="btn-save-cookie">保存</button>
         </div>
       </div>
+      ${state.fixDevMode ? buildFixSection() : ''}
     </div>
+  </div>`;
+}
+
+function buildFixSection() {
+  const hasProject = !!state.selectedPid && state.icons.length > 0;
+  const phase = state.fixPhase;
+  let body = '';
+  if (!hasProject) {
+    body = '<div class="settings-hint" style="color:#9ca3af;">先选择一个有图标的项目再来扫描。</div>';
+  } else if (phase === 'idle') {
+    body = '<div class="settings-hint">修复早期用本插件替换、<b>unicode / font-class</b> 模式下上下翻转的图标。只扫描当前项目。</div>'
+      + `<button class="btn-primary" id="btn-fix-scan">扫描当前项目（${state.icons.length} 个）</button>`;
+  } else if (phase === 'scanning') {
+    body = `<div class="settings-hint">扫描中 ${state.fixScanned}/${state.fixTotal}，已发现 <b>${state.fixBroken.length}</b> 个翻转图标</div>`;
+  } else if (phase === 'scanned') {
+    if (state.fixBroken.length === 0) {
+      body = '<div class="settings-hint" style="color:#16a34a;">● 未发现翻转图标</div>'
+        + `<button class="btn-secondary" id="btn-fix-reset">关闭</button>`;
+    } else {
+      body = `<div class="settings-hint">发现 <b>${state.fixBroken.length}</b> 个翻转图标，可批量修复。</div>`
+        + `<div style="display:flex;gap:6px;">`
+        + `<button class="btn-danger" id="btn-fix-reset">取消</button>`
+        + `<button class="btn-primary" id="btn-fix-go">修复 ${state.fixBroken.length} 个</button>`
+        + `</div>`;
+    }
+  } else if (phase === 'fixing') {
+    body = `<div class="settings-hint">修复中 ${state.fixFixed + state.fixFailed}/${state.fixTotal}…（修复 ${state.fixFixed}，失败 ${state.fixFailed}）</div>`;
+  } else if (phase === 'done') {
+    const color = state.fixFailed === 0 ? '#16a34a' : '#d97706';
+    body = `<div class="settings-hint" style="color:${color};">● 完成：修复 ${state.fixFixed}，失败 ${state.fixFailed}</div>`
+      + `<button class="btn-secondary" id="btn-fix-reset">关闭</button>`;
+  }
+  return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+    <div class="settings-label">修复历史图标（Y-flip）</div>
+    ${body}
   </div>`;
 }
 
@@ -333,8 +394,9 @@ function buildIconsSection() {
   } else {
     const cells = icons.map(ic => {
       const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
-      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${esc(ic.id)}" title="${esc(ic.font_class)}">
-        <div class="icon-preview">${sanitizeSvgPreview(ic.show_svg || '')}</div>
+      const svgHtml = sanitizeSvgPreview(ic.show_svg || '');
+      return `<div class="icon-cell ${sel ? 'selected' : ''}" data-id="${esc(ic.id)}" data-svg="${esc(ic.show_svg || '')}" data-name="${esc(ic.font_class)}">
+        <div class="icon-preview">${svgHtml}</div>
         <div class="icon-name">${esc(ic.font_class)}</div>
       </div>`;
     }).join('');
@@ -520,6 +582,23 @@ function bindEvents() {
   on('btn-settings-close', 'click', () => { state.showSettings = false; render(); });
   on('btn-save-cookie', 'click', saveCookie);
   on('btn-clear-cookie', 'click', clearCookie);
+  on('btn-fix-scan', 'click', startFixScan);
+  on('btn-fix-go', 'click', startFixApply);
+  on('btn-fix-reset', 'click', resetFixFlow);
+  // 5-tap on settings blank area toggles hidden dev-mode fix section
+  const settingsOverlay = document.querySelector('.settings-overlay');
+  if (settingsOverlay) {
+    settingsOverlay.addEventListener('click', (e) => {
+      if (e.target.closest('button,input,textarea,select,a,.download-link')) return;
+      state.fixTapCount++;
+      if (state.fixTapCount >= 5) {
+        state.fixDevMode = !state.fixDevMode;
+        state.fixTapCount = 0;
+        showToast(state.fixDevMode ? '已显示维护工具' : '已隐藏维护工具', 'success');
+        render();
+      }
+    });
+  }
   on('btn-reauth', 'click', () => { state.showSettings = true; render(); });
   on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
   on('btn-reauth-upload', 'click', () => { state.showSettings = true; render(); });
@@ -652,10 +731,54 @@ function onIconClick(iconId) {
   const icon = state.icons.find(ic => String(ic.id) === String(iconId));
   if (!icon) return;
   const wasSelected = state.selectedIcon && String(state.selectedIcon.id) === String(iconId);
+  const prevId = state.selectedIcon ? String(state.selectedIcon.id) : null;
   state.selectedIcon = wasSelected ? null : icon;
   if (wasSelected) state.replaceMode = false;
   state.replaceError = null;
-  render();
+
+  // Surgical update — avoid rebuilding the grid so the hovered cell's
+  // scale(1.8) state isn't destroyed and re-animated from scratch.
+  if (prevId) {
+    const prev = document.querySelector('.icon-cell[data-id="' + CSS.escape(prevId) + '"]');
+    if (prev) prev.classList.remove('selected');
+  }
+  if (state.selectedIcon) {
+    const next = document.querySelector('.icon-cell[data-id="' + CSS.escape(String(state.selectedIcon.id)) + '"]');
+    if (next) next.classList.add('selected');
+  }
+  updateBottomArea();
+}
+
+function updateBottomArea() {
+  const app = document.getElementById('app');
+  if (!app) return;
+  const oldBottom = app.querySelector('.action-footer, .replace-preview-area');
+  const newHtml = state.replaceMode ? buildReplacePreview() : buildBottomBar();
+  if (oldBottom && !newHtml) { oldBottom.remove(); return; }
+  if (!newHtml) return;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = newHtml.trim();
+  const newNode = tpl.content.firstChild;
+  if (oldBottom) oldBottom.replaceWith(newNode);
+  else app.appendChild(newNode);
+  // Rebind only the buttons that live in the bottom area
+  on('btn-replace', 'click', () => {
+    if (!state.selectedIcon) return;
+    state.replaceMode = true;
+    state.replaceError = null;
+    updateBottomArea();
+  });
+  on('btn-insert-figma', 'click', () => {
+    if (!state.selectedIcon || !state.selectedIcon.show_svg) return;
+    postToCode({ type: 'create-node-from-svg', svg: sanitizeSvgPreview(state.selectedIcon.show_svg), name: state.selectedIcon.font_class });
+  });
+  on('btn-cancel-replace', 'click', () => {
+    state.replaceMode = false;
+    state.replaceError = null;
+    updateBottomArea();
+  });
+  on('btn-confirm-replace', 'click', doReplace);
+  on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
 }
 
 async function loadProjects() {
@@ -680,7 +803,7 @@ async function loadProjects() {
   render();
 }
 
-async function loadIcons() {
+async function loadIcons(reselectId) {
   if (!state.selectedPid) return;
   state.iconsLoading = true;
   state.iconsError = null;
@@ -688,6 +811,9 @@ async function loadIcons() {
   render();
   try {
     state.icons = await IconfontAPI.getIcons(state.cookie, state.selectedPid);
+    if (reselectId) {
+      state.selectedIcon = state.icons.find(ic => String(ic.id) === String(reselectId)) || null;
+    }
   } catch (e) {
     state.iconsError = e.message;
     state.icons = [];
@@ -745,18 +871,75 @@ async function handleBatchUpload(results) {
 
 async function handleSvgExported(svgRaw) {
   try {
-    await IconfontAPI.replaceIcon(state.cookie, state.selectedIcon.id, svgRaw);
-    showToast('已替换：' + state.selectedIcon.font_class, 'success');
+    var replacedId = state.selectedIcon.id;
+    var replacedFontClass = state.selectedIcon.font_class;
+    const { showSvg } = await IconfontAPI.replaceIcon(state.cookie, replacedId, svgRaw);
+    showToast('已替换：' + replacedFontClass, 'success');
+    if (showSvg) {
+      const idx = state.icons.findIndex(ic => String(ic.id) === String(replacedId));
+      if (idx !== -1) state.icons[idx] = Object.assign({}, state.icons[idx], { show_svg: showSvg });
+    }
     state.replaceError = null;
     state.replacing = false;
     state.replaceMode = false;
-    state.selectedIcon = null;
-    await loadIcons();
+    state.selectedIcon = state.icons.find(ic => String(ic.id) === String(replacedId)) || null;
+    render();
+    const cell = document.querySelector('.icon-cell[data-id="' + CSS.escape(String(replacedId)) + '"]');
+    if (cell) {
+      cell.classList.add('just-replaced');
+      setTimeout(() => cell.classList.remove('just-replaced'), 750);
+    }
   } catch (e) {
     state.replaceError = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
     state.replacing = false;
     render();
   }
+}
+
+// ── HISTORICAL ICON FIX FLOW ─────────────────────────────────────
+function startFixScan() {
+  if (!state.selectedPid || state.icons.length === 0) return;
+  if (state.fixPhase === 'scanning' || state.fixPhase === 'fixing') return;
+  state.fixPhase = 'scanning';
+  state.fixScanned = 0;
+  state.fixTotal = state.icons.length;
+  state.fixBroken = [];
+  state.fixFixed = 0;
+  state.fixFailed = 0;
+  render();
+  postToCode({
+    type: 'scan-broken',
+    cookie: state.cookie,
+    proxyUrl: state.proxyUrl,
+    pid: state.selectedPid,
+    iconIds: state.icons.map(ic => ic.id),
+  });
+}
+
+function startFixApply() {
+  if (state.fixPhase !== 'scanned' || state.fixBroken.length === 0) return;
+  state.fixPhase = 'fixing';
+  state.fixTotal = state.fixBroken.length;
+  state.fixFixed = 0;
+  state.fixFailed = 0;
+  render();
+  postToCode({
+    type: 'fix-broken',
+    cookie: state.cookie,
+    proxyUrl: state.proxyUrl,
+    pid: state.selectedPid,
+    brokenIcons: state.fixBroken,
+  });
+}
+
+function resetFixFlow() {
+  state.fixPhase = 'idle';
+  state.fixScanned = 0;
+  state.fixTotal = 0;
+  state.fixBroken = [];
+  state.fixFixed = 0;
+  state.fixFailed = 0;
+  render();
 }
 
 // ── SVG CLEANING ─────────────────────────────────────────────────
@@ -765,10 +948,18 @@ function cleanSvg(svgString) {
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
   const svg = doc.documentElement;
 
-  // Remove data-* and id attributes from every element
+  // Collect IDs that are internally referenced (url(#id), href="#id", xlink:href="#id")
+  const raw = new XMLSerializer().serializeToString(svg);
+  const referencedIds = new Set();
+  raw.replace(/url\(#([^)]+)\)/g, function(_, id) { referencedIds.add(id); return ''; });
+  raw.replace(/href="#([^"]+)"/g, function(_, id) { referencedIds.add(id); return ''; });
+
+  // Remove data-* attributes and only unreferenced id attributes
   [svg, ...svg.querySelectorAll('*')].forEach(el => {
     [...el.attributes].forEach(attr => {
-      if (attr.name.startsWith('data-') || attr.name === 'id') {
+      if (attr.name.startsWith('data-')) {
+        el.removeAttribute(attr.name);
+      } else if (attr.name === 'id' && !referencedIds.has(attr.value)) {
         el.removeAttribute(attr.name);
       }
     });
@@ -936,7 +1127,8 @@ const IconfontAPI = {
       iconName: icon.name || icon.font_class,
     });
     if (json.code !== 200) throw new Error(json.message || '替换失败');
-    return json;
+    const newShowSvg = (json.data && json.data.show_svg) || json.show_svg || '';
+    return { json, showSvg: newShowSvg };
   },
 };
 
@@ -1018,8 +1210,83 @@ window.onmessage = async (event) => {
       }
       break;
     }
+
+    case 'scan-progress':
+      state.fixScanned = msg.scanned;
+      state.fixTotal = msg.total;
+      if (state.fixPhase === 'scanning') render();
+      break;
+
+    case 'scan-done':
+      state.fixBroken = msg.broken || [];
+      state.fixPhase = 'scanned';
+      render();
+      break;
+
+    case 'fix-progress':
+      state.fixFixed = msg.fixed;
+      state.fixFailed = msg.failed;
+      state.fixTotal = msg.total;
+      if (state.fixPhase === 'fixing') render();
+      break;
+
+    case 'fix-done':
+      state.fixFixed = msg.fixed;
+      state.fixFailed = msg.failed;
+      state.fixPhase = 'done';
+      render();
+      showToast('修复完成：' + msg.fixed + ' 成功' + (msg.failed ? '，' + msg.failed + ' 失败' : ''), msg.failed ? 'error' : 'success');
+      break;
   }
 };
+
+// ── ICON NAME TOOLTIP ────────────────────────────────────────────
+(function() {
+  const tip = document.getElementById('icon-name-tip');
+  const DELAY = 500;
+  let showTimer = null;
+  let activeCell = null;
+
+  function hide() {
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+    activeCell = null;
+    tip.style.display = 'none';
+  }
+
+  function showFor(cell) {
+    const name = cell.getAttribute('data-name');
+    if (!name) return;
+    tip.textContent = name;
+    tip.style.display = 'block';
+    const cellRect = cell.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = cellRect.left + cellRect.width / 2 - tipRect.width / 2;
+    let top = cellRect.bottom + 4;
+    if (top + tipRect.height > window.innerHeight - 4) top = cellRect.top - tipRect.height - 4;
+    if (left < 4) left = 4;
+    if (left + tipRect.width > window.innerWidth - 4) left = window.innerWidth - tipRect.width - 4;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  document.addEventListener('mouseover', function(e) {
+    const cell = e.target.closest('.icon-cell');
+    if (!cell) { hide(); return; }
+    if (cell === activeCell) return;
+    if (showTimer) clearTimeout(showTimer);
+    activeCell = cell;
+    tip.style.display = 'none';
+    showTimer = setTimeout(function() {
+      showTimer = null;
+      if (activeCell === cell) showFor(cell);
+    }, DELAY);
+  });
+  document.addEventListener('mouseout', function(e) {
+    const cell = e.target.closest('.icon-cell');
+    if (cell && !cell.contains(e.relatedTarget)) hide();
+  });
+  document.addEventListener('scroll', hide, true);
+})();
 
 // ── INIT ─────────────────────────────────────────────────────────
 render();
