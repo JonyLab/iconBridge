@@ -71,7 +71,8 @@ async function loadStorage() {
   const cookie = (await figma.clientStorage.getAsync('iconfont_cookie')) || '';
   const lastPid = (await figma.clientStorage.getAsync('iconfont_last_pid')) || '';
   const proxyUrl = (await figma.clientStorage.getAsync('iconfont_proxy_url')) || '';
-  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl });
+  const lang = (await figma.clientStorage.getAsync('iconfont_lang')) || 'zh';
+  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl, lang });
 }
 loadStorage();
 
@@ -160,6 +161,9 @@ figma.ui.onmessage = async (msg) => {
       }
       if (msg.proxyUrl !== undefined) {
         await figma.clientStorage.setAsync('iconfont_proxy_url', msg.proxyUrl);
+      }
+      if (msg.lang !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_lang', msg.lang);
       }
       break;
     }
