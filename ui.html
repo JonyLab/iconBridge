@@ -13,6 +13,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 .header-title { font-weight: 600; font-size: 13px; }
 .btn-icon { background: none; border: none; cursor: pointer; font-size: 15px; color: #6b7280; padding: 2px 4px; line-height: 1; }
 .btn-icon:hover { color: #374151; }
+.btn-lang { font-size: 10px !important; font-weight: 700; padding: 2px 5px !important; border-radius: 3px; border: 1px solid #d1d5db !important; background: #fff !important; color: #6b7280 !important; }
+.btn-lang:hover { background: #f3f4f6 !important; color: #374151 !important; border-color: #9ca3af !important; }
 
 /* Layout */
 .main-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
@@ -165,11 +167,175 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 <div id="app"></div>
 <div id="icon-name-tip"></div>
 <script>
+// ── I18N ─────────────────────────────────────────────────────────
+const STRINGS = {
+  zh: {
+    langToggle: 'EN',
+    settingsTitle: '设置',
+    settingsBtnTitle: '设置',
+    cookieLabel: 'iconfont Cookie',
+    cookieHint: '打开 iconfont.cn → 登录 → F12 → Network →<br>任意请求 → 复制 Cookie 请求头粘贴到此处',
+    proxyLabel: '代理地址',
+    proxyCollapseBtn: '收起说明 ▲',
+    proxyExpandBtn: '部署说明 ▼',
+    proxyHint: '插件需要一个 CORS 代理才能访问 iconfont.cn，推荐自行部署 Cloudflare Worker（免费）：<br><br>① <span class="download-link" id="btn-download-worker">下载 worker.js</span><br>② 登录 <b>dash.cloudflare.com</b><br>③ Workers &amp; Pages → Create → Create Worker<br>④ 选 <b>Hello World</b> 模板，起名后点"部署"<br>⑤ 进入"编辑代码"，全选删除，粘贴 worker.js 内容，再次"部署"<br>⑥ 复制 Worker 地址（xxx.workers.dev）填入下方',
+    proxyPlaceholder: 'https://xxx.workers.dev（留空则使用本地 proxy.js）',
+    cookieSaved: '● 已保存',
+    cookieEmpty: '● 未配置',
+    clearBtn: '清除',
+    saveBtn: '保存',
+    noCookieTitle: '请先配置 Cookie',
+    noCookieDesc: '点击右上角 <i class="ri-settings-3-line"></i> 填写 iconfont.cn 的 Cookie',
+    projectLabel: '项目',
+    projectsLoading: '正在加载项目…',
+    projectsErrorAuth: 'Cookie 已过期',
+    projectsErrorNet: '网络请求失败',
+    projectsErrorGeneric: '加载项目失败',
+    projectsNetMsg: '请检查网络连接后重试',
+    reauth: '重新配置',
+    noProjects: '暂无项目',
+    iconsLabel: '图标库',
+    iconsTotal: n => `共 ${n} 个`,
+    searchPlaceholder: '搜索 font class…',
+    uploadBtn: '上传',
+    iconsLoading: '正在加载图标…',
+    iconsErrorTitle: '加载图标失败',
+    retryBtn: '重试',
+    noIcons: '该项目暂无图标',
+    noMatchIcons: '无匹配图标',
+    replaceBtn: fc => `替换 <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
+    insertFigmaBtn: '放入 Figma',
+    selectFigmaNode: '选择 Figma 图标',
+    selectNodeHint: '请在 Figma 中选择图标节点',
+    replaceErrorTitle: '替换失败',
+    replacing: '替换中…',
+    confirmReplace: '确认替换',
+    cancelBtn: '取消',
+    uploadPageTitle: '上传新图标',
+    uploadTargetProject: name => `目标项目：${name}`,
+    uploadSelectHint: '请在 Figma 中选择图标',
+    uploadSelectSubHint: '支持多选，选中后将显示在此处',
+    uploadSectionLabel: 'Figma 选中的图标',
+    uploadCount: n => `${n} 个`,
+    uploadNodeLabel: '图标名 / font class',
+    uploadErrorTitle: '上传失败',
+    uploading: '上传中…',
+    uploadDoBtn: n => `上传 ${n} 个图标`,
+    fixNoProject: '先选择一个有图标的项目再来扫描。',
+    fixHint: '修复早期用本插件替换、<b>unicode / font-class</b> 模式下上下翻转的图标。只扫描当前项目。',
+    fixScanBtn: n => `扫描当前项目（${n} 个）`,
+    fixScanning: (scanned, total, broken) => `扫描中 ${scanned}/${total}，已发现 <b>${broken}</b> 个翻转图标`,
+    fixNoIssues: '● 未发现翻转图标',
+    fixClose: '关闭',
+    fixFound: n => `发现 <b>${n}</b> 个翻转图标，可批量修复。`,
+    fixCancel: '取消',
+    fixGoBtn: n => `修复 ${n} 个`,
+    fixFixing: (done, total, fixed, failed) => `修复中 ${done}/${total}…（修复 ${fixed}，失败 ${failed}）`,
+    fixDone: (fixed, failed) => `● 完成：修复 ${fixed}，失败 ${failed}`,
+    fixLabel: '修复历史图标（Y-flip）',
+    toastReplaced: fc => `已替换：${fc}`,
+    toastUploaded: n => `已提交 ${n} 个图标（需管理员审核后生效）`,
+    toastFixDone: (fixed, failed) => `修复完成：${fixed} 成功${failed ? '，' + failed + ' 失败' : ''}`,
+    toastDevOn: '已显示维护工具',
+    toastDevOff: '已隐藏维护工具',
+    timeout: '请求超时，请检查网络',
+    apiGetProjectsErr: '获取项目列表失败，请检查 Cookie',
+    apiGetIconsErr: '获取图标列表失败',
+    apiUploadErr: '上传失败',
+    apiReplaceErr: '替换失败',
+    uploadedSoFar: n => `已上传 ${n} 个，`,
+    cookieExpiredReconfig: 'Cookie 已过期，请重新配置',
+  },
+  en: {
+    langToggle: '中',
+    settingsTitle: 'Settings',
+    settingsBtnTitle: 'Settings',
+    cookieLabel: 'iconfont Cookie',
+    cookieHint: 'Open iconfont.cn → Login → F12 → Network →<br>Any request → Copy the Cookie header and paste here',
+    proxyLabel: 'Proxy URL',
+    proxyCollapseBtn: 'Collapse ▲',
+    proxyExpandBtn: 'Deploy Guide ▼',
+    proxyHint: 'The plugin needs a CORS proxy to access iconfont.cn. We recommend a free Cloudflare Worker:<br><br>① <span class="download-link" id="btn-download-worker">Download worker.js</span><br>② Sign in to <b>dash.cloudflare.com</b><br>③ Workers &amp; Pages → Create → Create Worker<br>④ Choose the <b>Hello World</b> template, name it, then click Deploy<br>⑤ Click Edit Code, select all, delete, paste worker.js, then Deploy<br>⑥ Copy the Worker URL (xxx.workers.dev) and paste below',
+    proxyPlaceholder: 'https://xxx.workers.dev (leave blank to use local proxy.js)',
+    cookieSaved: '● Saved',
+    cookieEmpty: '● Not configured',
+    clearBtn: 'Clear',
+    saveBtn: 'Save',
+    noCookieTitle: 'Cookie Required',
+    noCookieDesc: 'Click the <i class="ri-settings-3-line"></i> icon in the top right to add your iconfont.cn Cookie',
+    projectLabel: 'Project',
+    projectsLoading: 'Loading projects…',
+    projectsErrorAuth: 'Cookie Expired',
+    projectsErrorNet: 'Network Error',
+    projectsErrorGeneric: 'Failed to Load Projects',
+    projectsNetMsg: 'Check your network connection and try again',
+    reauth: 'Reconfigure',
+    noProjects: 'No projects',
+    iconsLabel: 'Icon Library',
+    iconsTotal: n => `${n} total`,
+    searchPlaceholder: 'Search font class…',
+    uploadBtn: 'Upload',
+    iconsLoading: 'Loading icons…',
+    iconsErrorTitle: 'Failed to Load Icons',
+    retryBtn: 'Retry',
+    noIcons: 'No icons in this project',
+    noMatchIcons: 'No matching icons',
+    replaceBtn: fc => `Replace <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
+    insertFigmaBtn: 'Insert to Figma',
+    selectFigmaNode: 'Select Figma Node',
+    selectNodeHint: 'Select an icon node in Figma',
+    replaceErrorTitle: 'Replace Failed',
+    replacing: 'Replacing…',
+    confirmReplace: 'Confirm Replace',
+    cancelBtn: 'Cancel',
+    uploadPageTitle: 'Upload New Icons',
+    uploadTargetProject: name => `Target project: ${name}`,
+    uploadSelectHint: 'Select icons in Figma',
+    uploadSelectSubHint: 'Multiple selection supported, selected icons will appear here',
+    uploadSectionLabel: 'Selected Figma Icons',
+    uploadCount: n => `${n} selected`,
+    uploadNodeLabel: 'Icon name / font class',
+    uploadErrorTitle: 'Upload Failed',
+    uploading: 'Uploading…',
+    uploadDoBtn: n => `Upload ${n} icon(s)`,
+    fixNoProject: 'Select a project with icons before scanning.',
+    fixHint: 'Fix icons that were previously replaced in <b>unicode / font-class</b> mode and appear vertically flipped. Current project only.',
+    fixScanBtn: n => `Scan current project (${n} icons)`,
+    fixScanning: (scanned, total, broken) => `Scanning ${scanned}/${total}, found <b>${broken}</b> flipped icons`,
+    fixNoIssues: '● No flipped icons found',
+    fixClose: 'Close',
+    fixFound: n => `Found <b>${n}</b> flipped icons, ready to fix.`,
+    fixCancel: 'Cancel',
+    fixGoBtn: n => `Fix ${n}`,
+    fixFixing: (done, total, fixed, failed) => `Fixing ${done}/${total}… (${fixed} fixed, ${failed} failed)`,
+    fixDone: (fixed, failed) => `● Done: ${fixed} fixed, ${failed} failed`,
+    fixLabel: 'Fix Historical Icons (Y-flip)',
+    toastReplaced: fc => `Replaced: ${fc}`,
+    toastUploaded: n => `Submitted ${n} icon(s) (pending admin review)`,
+    toastFixDone: (fixed, failed) => `Fix complete: ${fixed} succeeded${failed ? ', ' + failed + ' failed' : ''}`,
+    toastDevOn: 'Dev tools shown',
+    toastDevOff: 'Dev tools hidden',
+    timeout: 'Request timed out, check your network',
+    apiGetProjectsErr: 'Failed to get projects, check your Cookie',
+    apiGetIconsErr: 'Failed to get icons',
+    apiUploadErr: 'Upload failed',
+    apiReplaceErr: 'Replace failed',
+    uploadedSoFar: n => `Uploaded ${n}, `,
+    cookieExpiredReconfig: 'Cookie expired, please reconfigure',
+  },
+};
+
+function t(key, ...args) {
+  const s = STRINGS[state.lang][key];
+  return typeof s === 'function' ? s(...args) : s;
+}
+
 // ── STATE ────────────────────────────────────────────────────────
 const state = {
   view: 'NO_COOKIE',       // 'NO_COOKIE' | 'MAIN' | 'UPLOAD'
   showSettings: false,
   showProxyHelp: null,
+  lang: 'zh',              // 'zh' | 'en'
   cookie: '',
   proxyUrl: '',
   projects: [],
@@ -234,7 +400,10 @@ function esc(s) {
 function buildHeader() {
   return `<div class="header">
     <span class="header-title">IconBridge</span>
-    <button class="btn-icon" id="btn-settings" title="设置"><i class="ri-settings-3-line"></i></button>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="btn-icon btn-lang" id="btn-lang">${t('langToggle')}</button>
+      <button class="btn-icon" id="btn-settings" title="${t('settingsBtnTitle')}"><i class="ri-settings-3-line"></i></button>
+    </div>
   </div>`;
 }
 
@@ -242,8 +411,8 @@ function buildNoCookie() {
   return buildHeader() + `
   <div class="empty-view">
     <div class="empty-view-icon"><i class="ri-key-line"></i></div>
-    <div class="empty-view-title">请先配置 Cookie</div>
-    <div class="empty-view-desc">点击右上角 <i class="ri-settings-3-line"></i> 填写 iconfont.cn 的 Cookie</div>
+    <div class="empty-view-title">${t('noCookieTitle')}</div>
+    <div class="empty-view-desc">${t('noCookieDesc')}</div>
   </div>`;
 }
 
@@ -263,41 +432,33 @@ function buildSettings() {
     : state.showProxyHelp;
   return `<div class="settings-overlay">
     <div class="settings-header">
-      <span class="settings-title">设置</span>
-      <button class="btn-icon" id="btn-settings-close"><i class="ri-close-line"></i></button>
+      <span class="settings-title">${t('settingsTitle')}</span>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="btn-icon btn-lang" id="btn-lang-settings">${t('langToggle')}</button>
+        <button class="btn-icon" id="btn-settings-close"><i class="ri-close-line"></i></button>
+      </div>
     </div>
     <div class="settings-body">
-      <div class="settings-label">iconfont Cookie</div>
-      <div class="settings-hint">
-        打开 iconfont.cn → 登录 → F12 → Network →<br>
-        任意请求 → 复制 Cookie 请求头粘贴到此处
-      </div>
+      <div class="settings-label">${t('cookieLabel')}</div>
+      <div class="settings-hint">${t('cookieHint')}</div>
       <textarea class="cookie-input" id="cookie-input"
         placeholder="cna=xxx; iconfont_token=xxx; ...">${esc(state.cookie)}</textarea>
       <div style="height:12px;"></div>
       <div class="settings-label" style="display:flex;justify-content:space-between;align-items:center;">
-        代理地址
+        ${t('proxyLabel')}
         <span class="download-link" id="btn-toggle-proxy-help" style="font-size:10px;text-transform:none;letter-spacing:0;">
-          ${proxyHelpOpen ? '收起说明 ▲' : '部署说明 ▼'}
+          ${proxyHelpOpen ? t('proxyCollapseBtn') : t('proxyExpandBtn')}
         </span>
       </div>
-      ${proxyHelpOpen ? `<div class="settings-hint">
-        插件需要一个 CORS 代理才能访问 iconfont.cn，推荐自行部署 Cloudflare Worker（免费）：<br><br>
-        ① <span class="download-link" id="btn-download-worker">下载 worker.js</span><br>
-        ② 登录 <b>dash.cloudflare.com</b><br>
-        ③ Workers &amp; Pages → Create → Create Worker<br>
-        ④ 选 <b>Hello World</b> 模板，起名后点"部署"<br>
-        ⑤ 进入"编辑代码"，全选删除，粘贴 worker.js 内容，再次"部署"<br>
-        ⑥ 复制 Worker 地址（xxx.workers.dev）填入下方
-      </div>` : ''}
+      ${proxyHelpOpen ? `<div class="settings-hint">${t('proxyHint')}</div>` : ''}
       <input type="text" id="proxy-input"
-        placeholder="https://xxx.workers.dev（留空则使用本地 proxy.js）"
+        placeholder="${t('proxyPlaceholder')}"
         value="${esc(state.proxyUrl)}" />
       <div class="settings-footer">
-        <span class="cookie-status ${saved ? 'saved' : 'empty'}">${saved ? '● 已保存' : '● 未配置'}</span>
+        <span class="cookie-status ${saved ? 'saved' : 'empty'}">${saved ? t('cookieSaved') : t('cookieEmpty')}</span>
         <div style="display:flex;gap:6px;">
-          <button class="btn-danger" id="btn-clear-cookie">清除</button>
-          <button class="btn-primary" id="btn-save-cookie">保存</button>
+          <button class="btn-danger" id="btn-clear-cookie">${t('clearBtn')}</button>
+          <button class="btn-primary" id="btn-save-cookie">${t('saveBtn')}</button>
         </div>
       </div>
       ${state.fixDevMode ? buildFixSection() : ''}
@@ -310,32 +471,32 @@ function buildFixSection() {
   const phase = state.fixPhase;
   let body = '';
   if (!hasProject) {
-    body = '<div class="settings-hint" style="color:#9ca3af;">先选择一个有图标的项目再来扫描。</div>';
+    body = `<div class="settings-hint" style="color:#9ca3af;">${t('fixNoProject')}</div>`;
   } else if (phase === 'idle') {
-    body = '<div class="settings-hint">修复早期用本插件替换、<b>unicode / font-class</b> 模式下上下翻转的图标。只扫描当前项目。</div>'
-      + `<button class="btn-primary" id="btn-fix-scan">扫描当前项目（${state.icons.length} 个）</button>`;
+    body = `<div class="settings-hint">${t('fixHint')}</div>`
+      + `<button class="btn-primary" id="btn-fix-scan">${t('fixScanBtn', state.icons.length)}</button>`;
   } else if (phase === 'scanning') {
-    body = `<div class="settings-hint">扫描中 ${state.fixScanned}/${state.fixTotal}，已发现 <b>${state.fixBroken.length}</b> 个翻转图标</div>`;
+    body = `<div class="settings-hint">${t('fixScanning', state.fixScanned, state.fixTotal, state.fixBroken.length)}</div>`;
   } else if (phase === 'scanned') {
     if (state.fixBroken.length === 0) {
-      body = '<div class="settings-hint" style="color:#16a34a;">● 未发现翻转图标</div>'
-        + `<button class="btn-secondary" id="btn-fix-reset">关闭</button>`;
+      body = `<div class="settings-hint" style="color:#16a34a;">${t('fixNoIssues')}</div>`
+        + `<button class="btn-secondary" id="btn-fix-reset">${t('fixClose')}</button>`;
     } else {
-      body = `<div class="settings-hint">发现 <b>${state.fixBroken.length}</b> 个翻转图标，可批量修复。</div>`
+      body = `<div class="settings-hint">${t('fixFound', state.fixBroken.length)}</div>`
         + `<div style="display:flex;gap:6px;">`
-        + `<button class="btn-danger" id="btn-fix-reset">取消</button>`
-        + `<button class="btn-primary" id="btn-fix-go">修复 ${state.fixBroken.length} 个</button>`
+        + `<button class="btn-danger" id="btn-fix-reset">${t('fixCancel')}</button>`
+        + `<button class="btn-primary" id="btn-fix-go">${t('fixGoBtn', state.fixBroken.length)}</button>`
         + `</div>`;
     }
   } else if (phase === 'fixing') {
-    body = `<div class="settings-hint">修复中 ${state.fixFixed + state.fixFailed}/${state.fixTotal}…（修复 ${state.fixFixed}，失败 ${state.fixFailed}）</div>`;
+    body = `<div class="settings-hint">${t('fixFixing', state.fixFixed + state.fixFailed, state.fixTotal, state.fixFixed, state.fixFailed)}</div>`;
   } else if (phase === 'done') {
     const color = state.fixFailed === 0 ? '#16a34a' : '#d97706';
-    body = `<div class="settings-hint" style="color:${color};">● 完成：修复 ${state.fixFixed}，失败 ${state.fixFailed}</div>`
-      + `<button class="btn-secondary" id="btn-fix-reset">关闭</button>`;
+    body = `<div class="settings-hint" style="color:${color};">${t('fixDone', state.fixFixed, state.fixFailed)}</div>`
+      + `<button class="btn-secondary" id="btn-fix-reset">${t('fixClose')}</button>`;
   }
   return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
-    <div class="settings-label">修复历史图标（Y-flip）</div>
+    <div class="settings-label">${t('fixLabel')}</div>
     ${body}
   </div>`;
 }
@@ -343,34 +504,34 @@ function buildFixSection() {
 function buildProjectSection() {
   if (state.projectsLoading) {
     return `<div class="section">
-      <div class="section-label">项目</div>
-      <div class="loading-row"><span class="spinner"></span> 正在加载项目…</div>
+      <div class="section-label">${t('projectLabel')}</div>
+      <div class="loading-row"><span class="spinner"></span> ${t('projectsLoading')}</div>
     </div>`;
   }
   if (state.projectsError) {
     const isAuth = isAuthError(state.projectsError);
     const isNet = isNetworkError(state.projectsError);
     return `<div class="section">
-      <div class="section-label">项目</div>
+      <div class="section-label">${t('projectLabel')}</div>
       <div class="error-box">
-        <div class="error-box-title">${isAuth ? 'Cookie 已过期' : isNet ? '网络请求失败' : '加载项目失败'}</div>
-        <div class="error-box-msg">${isNet ? '请检查网络连接后重试' : isAuth ? '' : esc(state.projectsError)}
-          ${isAuth ? '<span class="error-link" id="btn-reauth">重新配置</span>' : ''}
+        <div class="error-box-title">${isAuth ? t('projectsErrorAuth') : isNet ? t('projectsErrorNet') : t('projectsErrorGeneric')}</div>
+        <div class="error-box-msg">${isNet ? t('projectsNetMsg') : isAuth ? '' : esc(state.projectsError)}
+          ${isAuth ? `<span class="error-link" id="btn-reauth">${t('reauth')}</span>` : ''}
         </div>
       </div>
     </div>`;
   }
   if (state.projects.length === 0) {
     return `<div class="section">
-      <div class="section-label">项目</div>
-      <div class="no-selection">暂无项目</div>
+      <div class="section-label">${t('projectLabel')}</div>
+      <div class="no-selection">${t('noProjects')}</div>
     </div>`;
   }
   const opts = state.projects.map(p =>
     `<option value="${esc(p.id)}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
   return `<div class="section">
-    <div class="section-label">项目</div>
+    <div class="section-label">${t('projectLabel')}</div>
     <select id="project-select">${opts}</select>
   </div>`;
 }
@@ -380,17 +541,17 @@ function buildIconsSection() {
   let body = '';
 
   if (state.iconsLoading) {
-    body = `<div class="loading-row"><span class="spinner"></span> 正在加载图标…</div>`;
+    body = `<div class="loading-row"><span class="spinner"></span> ${t('iconsLoading')}</div>`;
   } else if (state.iconsError) {
     body = `<div class="error-box">
-      <div class="error-box-title"><i class="ri-alert-line"></i> 加载图标失败</div>
+      <div class="error-box-title"><i class="ri-alert-line"></i> ${t('iconsErrorTitle')}</div>
       <div class="error-box-msg">${esc(state.iconsError)}</div>
     </div>
-    <button class="btn-retry" id="btn-retry-icons">重试</button>`;
+    <button class="btn-retry" id="btn-retry-icons">${t('retryBtn')}</button>`;
   } else if (state.icons.length === 0) {
-    body = `<div class="empty-icons">该项目暂无图标</div>`;
+    body = `<div class="empty-icons">${t('noIcons')}</div>`;
   } else if (icons.length === 0) {
-    body = `<div class="empty-icons">无匹配图标</div>`;
+    body = `<div class="empty-icons">${t('noMatchIcons')}</div>`;
   } else {
     const cells = icons.map(ic => {
       const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
@@ -405,13 +566,13 @@ function buildIconsSection() {
 
   return `<div class="section section-icons">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div class="section-label" style="margin-bottom:0;">图标库</div>
-      <span class="icon-count">共 ${state.icons.length} 个</span>
+      <div class="section-label" style="margin-bottom:0;">${t('iconsLabel')}</div>
+      <span class="icon-count">${t('iconsTotal', state.icons.length)}</span>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px;">
-      <input class="search-input" id="search-input" style="margin-bottom:0;flex:1;" placeholder="搜索 font class…"
+      <input class="search-input" id="search-input" style="margin-bottom:0;flex:1;" placeholder="${t('searchPlaceholder')}"
         value="${esc(state.searchQuery)}" />
-      <button class="btn-primary" id="btn-goto-upload" style="white-space:nowrap;flex-shrink:0;">上传</button>
+      <button class="btn-primary" id="btn-goto-upload" style="white-space:nowrap;flex-shrink:0;">${t('uploadBtn')}</button>
     </div>
     ${body}
   </div>`;
@@ -421,11 +582,10 @@ const SVG_FIGMA = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
 
 function buildBottomBar() {
   if (!state.selectedIcon) return '';
-  const replaceLabel = '替换 <span style="font-weight:400;opacity:0.8;">' + esc(state.selectedIcon.font_class) + '</span>';
   return '<div class="action-footer">' +
     '<div style="display:flex;gap:8px;">' +
-      '<button class="btn-action-bar" id="btn-replace">' + replaceLabel + '</button>' +
-      '<button class="btn-action-bar btn-action-secondary" id="btn-insert-figma">放入 Figma</button>' +
+      `<button class="btn-action-bar" id="btn-replace">${t('replaceBtn', esc(state.selectedIcon.font_class))}</button>` +
+      `<button class="btn-action-bar btn-action-secondary" id="btn-insert-figma">${t('insertFigmaBtn')}</button>` +
     '</div>' +
   '</div>';
 }
@@ -436,27 +596,27 @@ function buildReplacePreview() {
     ? '<div class="replace-thumb"><div class="replace-thumb-icon">' +
         (state.figmaNodeSvg ? sanitizeSvgPreview(state.figmaNodeSvg) : '') +
       '</div><div class="replace-thumb-label" title="' + esc(state.figmaNode.name) + '">' + esc(state.figmaNode.name) + '</div></div>'
-    : '<div class="replace-thumb empty"><div class="replace-thumb-icon" style="color:#d1d5db;">' + SVG_FIGMA + '</div><div class="replace-thumb-label">选择 Figma 图标</div></div>';
+    : `<div class="replace-thumb empty"><div class="replace-thumb-icon" style="color:#d1d5db;">${SVG_FIGMA}</div><div class="replace-thumb-label">${t('selectFigmaNode')}</div></div>`;
   const rightThumb = '<div class="replace-thumb"><div class="replace-thumb-icon">' +
     sanitizeSvgPreview(state.selectedIcon.show_svg || '') +
     '</div><div class="replace-thumb-label" title="' + esc(state.selectedIcon.font_class) + '">' + esc(state.selectedIcon.font_class) + '</div></div>';
 
   const ready = hasNode && !!state.selectedIcon;
   const errorHtml = state.replaceError
-    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> 替换失败</div>' +
+    ? `<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> ${t('replaceErrorTitle')}</div>` +
       '<div class="error-box-msg">' + esc(state.replaceError) +
-        (isAuthError(state.replaceError) ? '<span class="error-link" id="btn-reauth-replace">重新配置</span>' : '') +
+        (isAuthError(state.replaceError) ? `<span class="error-link" id="btn-reauth-replace">${t('reauth')}</span>` : '') +
       '</div></div>'
     : '';
-  const btnLabel = state.replacing ? '<span class="spinner"></span> 替换中…' : '确认替换';
+  const btnLabel = state.replacing ? `<span class="spinner"></span> ${t('replacing')}` : t('confirmReplace');
 
   return '<div class="replace-preview-area">' +
     '<div class="replace-pair">' + leftThumb + '<div class="replace-arrow">→</div>' + rightThumb + '</div>' +
-    (!hasNode ? '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-bottom:8px;">请在 Figma 中选择图标节点</div>' : '') +
+    (!hasNode ? `<div style="text-align:center;font-size:10px;color:#9ca3af;margin-bottom:8px;">${t('selectNodeHint')}</div>` : '') +
     errorHtml +
     '<div style="display:flex;gap:8px;">' +
-      '<button class="btn-action-bar ' + (state.replacing ? 'replacing' : '') + '" id="btn-confirm-replace" ' + (ready && !state.replacing ? '' : 'disabled') + '>' + btnLabel + '</button>' +
-      '<button class="btn-action-bar btn-action-secondary" id="btn-cancel-replace" style="white-space:nowrap;">取消</button>' +
+      `<button class="btn-action-bar ${state.replacing ? 'replacing' : ''}" id="btn-confirm-replace" ${ready && !state.replacing ? '' : 'disabled'}>${btnLabel}</button>` +
+      `<button class="btn-action-bar btn-action-secondary" id="btn-cancel-replace" style="white-space:nowrap;">${t('cancelBtn')}</button>` +
     '</div>' +
   '</div>';
 }
@@ -465,18 +625,18 @@ function buildUploadPage() {
   const projectName = state.projects.find(p => String(p.id) === String(state.selectedPid));
   const header = '<div class="sub-header">' +
     '<button class="btn-back" id="btn-upload-back"><i class="ri-arrow-left-line"></i></button>' +
-    '<span class="sub-header-title">上传新图标</span>' +
+    `<span class="sub-header-title">${t('uploadPageTitle')}</span>` +
   '</div>';
   const projectHint = projectName
-    ? '<div class="upload-project-hint">目标项目：' + esc(projectName.name) + '</div>'
+    ? '<div class="upload-project-hint">' + t('uploadTargetProject', esc(projectName.name)) + '</div>'
     : '';
 
   let body = '';
   if (state.figmaNodes.length === 0) {
     body = '<div class="upload-empty">' +
       '<div style="width:48px;height:48px;color:#d1d5db;margin:0 auto 8px;">' + SVG_FIGMA + '</div>' +
-      '<div style="font-size:12px;font-weight:500;margin-bottom:4px;">请在 Figma 中选择图标</div>' +
-      '<div style="font-size:10px;color:#9ca3af;">支持多选，选中后将显示在此处</div>' +
+      `<div style="font-size:12px;font-weight:500;margin-bottom:4px;">${t('uploadSelectHint')}</div>` +
+      `<div style="font-size:10px;color:#9ca3af;">${t('uploadSelectSubHint')}</div>` +
     '</div>';
   } else {
     const items = state.figmaNodes.map(n => {
@@ -485,15 +645,15 @@ function buildUploadPage() {
       return '<div class="upload-node-row">' +
         '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
         '<div class="upload-node-info">' +
-          '<div class="upload-node-name">图标名 / font class</div>' +
+          `<div class="upload-node-name">${t('uploadNodeLabel')}</div>` +
           '<input class="upload-node-class" data-node-id="' + esc(n.id) + '" placeholder="' + esc(n.name) + '" value="' + esc(fontClass) + '" />' +
         '</div>' +
       '</div>';
     }).join('');
     body = '<div class="section section-icons">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 12px;">' +
-        '<div class="section-label" style="margin-bottom:0;">Figma 选中的图标</div>' +
-        '<span class="icon-count">' + state.figmaNodes.length + ' 个</span>' +
+        `<div class="section-label" style="margin-bottom:0;">${t('uploadSectionLabel')}</div>` +
+        `<span class="icon-count">${t('uploadCount', state.figmaNodes.length)}</span>` +
       '</div>' +
       '<div class="upload-nodes-list" style="padding:0 12px;">' + items + '</div>' +
     '</div>';
@@ -501,17 +661,17 @@ function buildUploadPage() {
 
   const ready = state.figmaNodes.length > 0 && state.figmaNodes.every(n => (state.uploadFontClasses[n.id] || '').trim());
   const errorHtml = state.uploadError
-    ? '<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> 上传失败</div>' +
+    ? `<div class="error-box" style="margin-bottom:8px;"><div class="error-box-title"><i class="ri-alert-line"></i> ${t('uploadErrorTitle')}</div>` +
       '<div class="error-box-msg">' + esc(state.uploadError) +
-        (isAuthError(state.uploadError) ? '<span class="error-link" id="btn-reauth-upload">重新配置</span>' : '') +
+        (isAuthError(state.uploadError) ? `<span class="error-link" id="btn-reauth-upload">${t('reauth')}</span>` : '') +
       '</div></div>'
     : '';
-  const btnLabel = state.uploading ? '<span class="spinner"></span> 上传中…' : '上传 ' + state.figmaNodes.length + ' 个图标';
+  const btnLabel = state.uploading ? `<span class="spinner"></span> ${t('uploading')}` : t('uploadDoBtn', state.figmaNodes.length);
 
   return header + projectHint +
     '<div class="main-body">' + body + '</div>' +
     '<div class="action-footer">' + errorHtml +
-      '<button class="btn-replace ' + (state.uploading ? 'uploading' : '') + '" id="btn-do-upload" ' + (ready && !state.uploading ? '' : 'disabled') + '>' + btnLabel + '</button>' +
+      `<button class="btn-replace ${state.uploading ? 'uploading' : ''}" id="btn-do-upload" ${ready && !state.uploading ? '' : 'disabled'}>${btnLabel}</button>` +
     '</div>';
 }
 
@@ -551,7 +711,7 @@ function isAuthError(msg) {
   if (!msg) return false;
   const s = msg.toLowerCase();
   return s.includes('未登录') || s.includes('401') || s.includes('登录')
-    || s.includes('cookie') || s.includes('过期');
+    || s.includes('cookie') || s.includes('过期') || s.includes('expired');
 }
 
 function isNetworkError(msg) {
@@ -570,8 +730,17 @@ function sanitizeSvgPreview(svgStr) {
     .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
 }
 
+// ── LANG TOGGLE ──────────────────────────────────────────────────
+function toggleLang() {
+  state.lang = state.lang === 'zh' ? 'en' : 'zh';
+  postToCode({ type: 'save-storage', lang: state.lang });
+  render();
+}
+
 // ── BIND EVENTS ──────────────────────────────────────────────────
 function bindEvents() {
+  on('btn-lang', 'click', toggleLang);
+  on('btn-lang-settings', 'click', toggleLang);
   on('btn-download-worker', 'click', downloadWorker);
   on('btn-toggle-proxy-help', 'click', () => {
     const proxyHelpOpen = state.showProxyHelp === null ? !state.proxyUrl : state.showProxyHelp;
@@ -594,7 +763,7 @@ function bindEvents() {
       if (state.fixTapCount >= 5) {
         state.fixDevMode = !state.fixDevMode;
         state.fixTapCount = 0;
-        showToast(state.fixDevMode ? '已显示维护工具' : '已隐藏维护工具', 'success');
+        showToast(state.fixDevMode ? t('toastDevOn') : t('toastDevOff'), 'success');
         render();
       }
     });
@@ -852,16 +1021,16 @@ async function handleBatchUpload(results) {
       await IconfontAPI.uploadIcon(state.cookie, cleanSvg(r.svg), fontClass, state.selectedPid);
       successCount++;
     } catch (e) {
-      errorMsg = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
+      errorMsg = isAuthError(e.message) ? t('cookieExpiredReconfig') : e.message;
       break;
     }
   }
   state.uploading = false;
   if (errorMsg) {
-    state.uploadError = (successCount > 0 ? '已上传 ' + successCount + ' 个，' : '') + errorMsg;
+    state.uploadError = (successCount > 0 ? t('uploadedSoFar', successCount) : '') + errorMsg;
     render();
   } else {
-    showToast('已提交 ' + successCount + ' 个图标（需管理员审核后生效）', 'success');
+    showToast(t('toastUploaded', successCount), 'success');
     state.uploadError = null;
     state.uploadFontClasses = {};
     state.view = 'MAIN';
@@ -874,7 +1043,7 @@ async function handleSvgExported(svgRaw) {
     var replacedId = state.selectedIcon.id;
     var replacedFontClass = state.selectedIcon.font_class;
     const { showSvg } = await IconfontAPI.replaceIcon(state.cookie, replacedId, svgRaw);
-    showToast('已替换：' + replacedFontClass, 'success');
+    showToast(t('toastReplaced', replacedFontClass), 'success');
     if (showSvg) {
       const idx = state.icons.findIndex(ic => String(ic.id) === String(replacedId));
       if (idx !== -1) state.icons[idx] = Object.assign({}, state.icons[idx], { show_svg: showSvg });
@@ -890,7 +1059,7 @@ async function handleSvgExported(svgRaw) {
       setTimeout(() => cell.classList.remove('just-replaced'), 750);
     }
   } catch (e) {
-    state.replaceError = isAuthError(e.message) ? 'Cookie 已过期，请重新配置' : e.message;
+    state.replaceError = isAuthError(e.message) ? t('cookieExpiredReconfig') : e.message;
     state.replacing = false;
     render();
   }
@@ -1081,7 +1250,7 @@ function apiCall(type, params) {
     setTimeout(() => {
       if (_pending[id]) {
         delete _pending[id];
-        reject(new Error('请求超时，请检查网络'));
+        reject(new Error(t('timeout')));
       }
     }, 15000);
   });
@@ -1093,7 +1262,7 @@ const IconfontAPI = {
   // Combines personal projects (data.projects) and corp/team projects (data.corpProjects)
   async getProjects(cookie) {
     const json = await apiCall('api-get-projects', { cookie });
-    if (json.code !== 200) throw new Error(json.message || '获取项目列表失败，请检查 Cookie');
+    if (json.code !== 200) throw new Error(json.message || t('apiGetProjectsErr'));
     const d = json.data || {};
     const all = [
       ...(d.ownProjects || []),
@@ -1104,14 +1273,14 @@ const IconfontAPI = {
 
   async getIcons(cookie, pid) {
     const json = await apiCall('api-get-icons', { cookie, pid });
-    if (json.code !== 200) throw new Error(json.message || '获取图标列表失败');
+    if (json.code !== 200) throw new Error(json.message || t('apiGetIconsErr'));
     const icons = (json.data && json.data.icons) || [];
     return icons;
   },
 
   async uploadIcon(cookie, originSvg, fontClass, pid) {
     const json = await apiCall('api-upload-icon', { cookie, originSvg, fontClass, pid });
-    if (json.code !== 200) throw new Error(json.message || '上传失败');
+    if (json.code !== 200) throw new Error(json.message || t('apiUploadErr'));
     return json;
   },
 
@@ -1126,7 +1295,7 @@ const IconfontAPI = {
       unicode: icon.unicode,
       iconName: icon.name || icon.font_class,
     });
-    if (json.code !== 200) throw new Error(json.message || '替换失败');
+    if (json.code !== 200) throw new Error(json.message || t('apiReplaceErr'));
     const newShowSvg = (json.data && json.data.show_svg) || json.show_svg || '';
     return { json, showSvg: newShowSvg };
   },
@@ -1146,6 +1315,7 @@ window.onmessage = async (event) => {
       state.cookie = msg.cookie || '';
       state.selectedPid = msg.lastPid || '';
       state.proxyUrl = msg.proxyUrl || '';
+      state.lang = msg.lang || 'zh';
       state.view = state.cookie ? 'MAIN' : 'NO_COOKIE';
       render();
       if (state.cookie) loadProjects();
@@ -1163,7 +1333,7 @@ window.onmessage = async (event) => {
         if (!state.uploadFontClasses[n.id]) {
           state.uploadFontClasses[n.id] = n.name
             .toLowerCase()
-            .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+            .replace(/[^a-z0-9一-龥]+/g, '-')
             .replace(/^-+|-+$/g, '');
         }
       });
@@ -1235,7 +1405,7 @@ window.onmessage = async (event) => {
       state.fixFailed = msg.failed;
       state.fixPhase = 'done';
       render();
-      showToast('修复完成：' + msg.fixed + ' 成功' + (msg.failed ? '，' + msg.failed + ' 失败' : ''), msg.failed ? 'error' : 'success');
+      showToast(t('toastFixDone', msg.fixed, msg.failed), msg.failed ? 'error' : 'success');
       break;
   }
 };
