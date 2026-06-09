@@ -16,9 +16,10 @@ const ICONFONT_FONT_ASCENT = 896;
 function flipPathDY(d, H) {
   const tokens = d.match(/[MmLlHhVvCcSsQqTtAaZz]|-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) || [];
   const out = [];
-  const absY = (s) => String(H - parseFloat(s));
-  const relY = (s) => String(-parseFloat(s));
-  const negAngle = (s) => String(-parseFloat(s));
+  const fmt = (n) => { const r = Math.round(n * 1e5) / 1e5; return String(r); };
+  const absY = (s) => fmt(H - parseFloat(s));
+  const relY = (s) => fmt(-parseFloat(s));
+  const negAngle = (s) => fmt(-parseFloat(s));
   let i = 0;
   let prevCmd = '';
   while (i < tokens.length) {
@@ -64,6 +65,38 @@ function flipPathDY(d, H) {
     }
   }
   return out.join(' ');
+}
+
+// Build the prototype_svg / svg / path_attributes triple for updateProjectIcon.
+// mono (default): paths space-joined, single fill (legacy behavior, zero regression).
+// color: paths pipe-joined, one fill per path in document order (iconfont colored format).
+function buildReplaceFields(showSvg, colorMode) {
+  const tagRe = /<path\b[^>]*>/g;
+  const ds = [];
+  const fills = [];
+  var m;
+  while ((m = tagRe.exec(showSvg)) !== null) {
+    const tag = m[0];
+    const dm = tag.match(/\bd="([^"]*)"/);
+    if (!dm) continue;
+    ds.push(dm[1]);
+    const fm = tag.match(/\bfill="([^"]*)"/);
+    fills.push(fm ? fm[1] : '#333333');
+  }
+  if (colorMode === 'color') {
+    return {
+      prototypeSvg: ds.join('|'),
+      svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join('|'),
+      pathAttributes: fills.map(function (f) { return 'fill="' + f + '"'; }).join('|'),
+    };
+  }
+  // mono — preserve legacy behavior exactly: single fill from first <path>, space-joined paths
+  const fillMatch = showSvg.match(/<path[^>]+fill="([^"]*)"/);
+  return {
+    prototypeSvg: ds.join(' '),
+    svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join(' '),
+    pathAttributes: fillMatch ? 'fill="' + fillMatch[1] + '"' : 'fill="#000000"',
+  };
 }
 
 // On startup: read persisted data and send to UI
@@ -337,7 +370,7 @@ figma.ui.onmessage = async (msg) => {
             name: msg.fontClass,
             keepFill: false,
             unicode: ic.unicode || '',
-            slug: msg.fontClass
+            font_class: msg.fontClass
           };
         });
 
