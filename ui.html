@@ -669,7 +669,7 @@ function buildUploadPage() {
       const svg = state.figmaNodeSvgs[n.id];
       const fontClass = state.uploadFontClasses[n.id] || '';
       return '<div class="upload-node-row">' +
-        '<div class="upload-node-thumb">' + (svg ? sanitizeSvgPreview(svg) : '') + '</div>' +
+        '<div class="upload-node-thumb">' + (svg ? previewSourceSvg(svg, state.colorMode !== 'color') : '') + '</div>' +
         '<div class="upload-node-info">' +
           `<div class="upload-node-name">${t('uploadNodeLabel')}</div>` +
           '<input class="upload-node-class" data-node-id="' + esc(n.id) + '" placeholder="' + esc(n.name) + '" value="' + esc(fontClass) + '" />' +
