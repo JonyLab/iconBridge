@@ -974,6 +974,9 @@ function updateBottomArea() {
   });
   on('btn-confirm-replace', 'click', doReplace);
   on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
+  // Color toggle lives in the replace preview too — must rebind on partial bottom-area updates
+  on('btn-color-mono', 'click', () => { setColorMode('mono'); });
+  on('btn-color-color', 'click', () => { setColorMode('color'); });
 }
 
 async function loadProjects() {
