@@ -364,7 +364,7 @@ figma.ui.onmessage = async (msg) => {
           return {
             id: ic.id,
             name: msg.fontClass,
-            keepFill: false,
+            keepFill: !!msg.keepFill,
             unicode: ic.unicode || '',
             font_class: msg.fontClass
           };
