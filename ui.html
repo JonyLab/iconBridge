@@ -754,6 +754,11 @@ function toggleLang() {
   postToCode({ type: 'save-storage', lang: state.lang });
   render();
 }
+function setColorMode(mode) {
+  state.colorMode = mode === 'color' ? 'color' : 'mono';
+  postToCode({ type: 'save-storage', colorMode: state.colorMode });
+  render();
+}
 
 // ── BIND EVENTS ──────────────────────────────────────────────────
 function bindEvents() {
@@ -812,6 +817,9 @@ function bindEvents() {
     render();
   });
   on('btn-confirm-replace', 'click', doReplace);
+  // Global color mode toggle (shared by replace + upload views)
+  on('btn-color-mono', 'click', () => { setColorMode('mono'); });
+  on('btn-color-color', 'click', () => { setColorMode('color'); });
 
   // Main page: insert selected icon to Figma canvas center
   on('btn-insert-figma', 'click', () => {
