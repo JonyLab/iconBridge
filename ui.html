@@ -1023,7 +1023,7 @@ async function handleBatchUpload(results) {
     if (r.error) { errorMsg = r.error; break; }
     const fontClass = (state.uploadFontClasses[r.nodeId] || '').trim();
     try {
-      await IconfontAPI.uploadIcon(state.cookie, cleanSvg(r.svg), fontClass, state.selectedPid);
+      await IconfontAPI.uploadIcon(state.cookie, cleanSvg(r.svg), fontClass, state.selectedPid, state.colorMode === 'color');
       successCount++;
     } catch (e) {
       errorMsg = isAuthError(e.message) ? t('cookieExpiredReconfig') : e.message;
@@ -1283,8 +1283,8 @@ const IconfontAPI = {
     return icons;
   },
 
-  async uploadIcon(cookie, originSvg, fontClass, pid) {
-    const json = await apiCall('api-upload-icon', { cookie, originSvg, fontClass, pid });
+  async uploadIcon(cookie, originSvg, fontClass, pid, keepFill) {
+    const json = await apiCall('api-upload-icon', { cookie, originSvg, fontClass, pid, keepFill: !!keepFill });
     if (json.code !== 200) throw new Error(json.message || t('apiUploadErr'));
     return json;
   },
@@ -1299,6 +1299,7 @@ const IconfontAPI = {
       fontClass: icon.font_class,
       unicode: icon.unicode,
       iconName: icon.name || icon.font_class,
+      colorMode: state.colorMode,
     });
     if (json.code !== 200) throw new Error(json.message || t('apiReplaceErr'));
     const newShowSvg = (json.data && json.data.show_svg) || json.show_svg || '';
