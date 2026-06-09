@@ -31,11 +31,9 @@ select, input[type="text"], input:not([type]) {
 }
 select { -webkit-appearance: none; appearance: none; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
 select:focus, input:focus { border-color: #3b82f6; }
-.project-row { display: flex; gap: 6px; align-items: stretch; }
-.project-row select { flex: 1; }
-.btn-reload { flex-shrink: 0; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border: none; background: none; color: #6b7280; cursor: pointer; font-size: 16px; }
-.btn-reload:hover { color: #374151; }
-.btn-reload.spinning i { display: inline-block; animation: spin 0.7s linear infinite; }
+.btn-reload-text { display: inline-flex; align-items: center; gap: 3px; border: none; background: none; color: #6b7280; cursor: pointer; font-size: 10px; padding: 0; }
+.btn-reload-text:hover { color: #374151; }
+.btn-reload-text.spinning i { display: inline-block; animation: spin 0.7s linear infinite; }
 
 /* Buttons */
 .btn-primary { padding: 5px 12px; font-size: 11px; background: #111827; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
@@ -213,7 +211,7 @@ const STRINGS = {
     iconsLoading: '正在加载图标…',
     iconsErrorTitle: '加载图标失败',
     retryBtn: '重试',
-    reloadIcons: '刷新图标',
+    reloadIcons: '刷新列表',
     noIcons: '该项目暂无图标',
     noMatchIcons: '无匹配图标',
     replaceBtn: fc => `替换 <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
@@ -293,7 +291,7 @@ const STRINGS = {
     iconsLoading: 'Loading icons…',
     iconsErrorTitle: 'Failed to Load Icons',
     retryBtn: 'Retry',
-    reloadIcons: 'Reload icons',
+    reloadIcons: 'Refresh list',
     noIcons: 'No icons in this project',
     noMatchIcons: 'No matching icons',
     replaceBtn: fc => `Replace <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
@@ -551,10 +549,7 @@ function buildProjectSection() {
   ).join('');
   return `<div class="section">
     <div class="section-label">${t('projectLabel')}</div>
-    <div class="project-row">
-      <select id="project-select">${opts}</select>
-      <button class="btn-reload${state.iconsLoading ? ' spinning' : ''}" id="btn-reload-icons" title="${t('reloadIcons')}"><i class="ri-refresh-line"></i></button>
-    </div>
+    <select id="project-select">${opts}</select>
   </div>`;
 }
 
@@ -589,7 +584,10 @@ function buildIconsSection() {
   return `<div class="section section-icons">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div class="section-label" style="margin-bottom:0;">${t('iconsLabel')}</div>
-      <span class="icon-count">${t('iconsTotal', state.icons.length)}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="icon-count">${t('iconsTotal', state.icons.length)}</span>
+        <button class="btn-reload-text${state.iconsLoading ? ' spinning' : ''}" id="btn-reload-icons"><i class="ri-refresh-line"></i> ${t('reloadIcons')}</button>
+      </div>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px;">
       <input class="search-input" id="search-input" style="margin-bottom:0;flex:1;" placeholder="${t('searchPlaceholder')}"
