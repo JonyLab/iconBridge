@@ -618,7 +618,7 @@ function buildReplacePreview() {
   const hasNode = !!state.figmaNode;
   const leftThumb = hasNode
     ? '<div class="replace-thumb"><div class="replace-thumb-icon">' +
-        (state.figmaNodeSvg ? sanitizeSvgPreview(state.figmaNodeSvg) : '') +
+        (state.figmaNodeSvg ? previewSourceSvg(state.figmaNodeSvg, state.colorMode !== 'color') : '') +
       '</div><div class="replace-thumb-label" title="' + esc(state.figmaNode.name) + '">' + esc(state.figmaNode.name) + '</div></div>'
     : `<div class="replace-thumb empty"><div class="replace-thumb-icon" style="color:#d1d5db;">${SVG_FIGMA}</div><div class="replace-thumb-label">${t('selectFigmaNode')}</div></div>`;
   const rightThumb = '<div class="replace-thumb"><div class="replace-thumb-icon">' +
@@ -754,6 +754,19 @@ function sanitizeSvgPreview(svgStr) {
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, '')
     .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, '');
+}
+
+// Replace-panel source preview: in 去色 mode force concrete fills/strokes to
+// currentColor (leaving fill/stroke="none" so outline icons stay outlines) so the
+// thumbnail mirrors the mono result; in 原色 mode show the source unchanged.
+function previewSourceSvg(svgStr, mono) {
+  const s = sanitizeSvgPreview(svgStr || '');
+  if (!mono) return s;
+  return s
+    .replace(/fill="(?!none")[^"]*"/gi, 'fill="currentColor"')
+    .replace(/stroke="(?!none")[^"]*"/gi, 'stroke="currentColor"')
+    .replace(/fill:\s*(?!none)[^;"'}]+/gi, 'fill:currentColor')
+    .replace(/stroke:\s*(?!none)[^;"'}]+/gi, 'stroke:currentColor');
 }
 
 // ── LANG TOGGLE ──────────────────────────────────────────────────
