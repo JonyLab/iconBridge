@@ -583,11 +583,11 @@ function buildIconsSection() {
 
   return `<div class="section section-icons">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div class="section-label" style="margin-bottom:0;">${t('iconsLabel')}</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="icon-count">${t('iconsTotal', state.icons.length)}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="section-label" style="margin-bottom:0;">${t('iconsLabel')}</div>
         <button class="btn-reload-text${state.iconsLoading ? ' spinning' : ''}" id="btn-reload-icons"><i class="ri-refresh-line"></i> ${t('reloadIcons')}</button>
       </div>
+      <span class="icon-count">${t('iconsTotal', state.icons.length)}</span>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px;">
       <input class="search-input" id="search-input" style="margin-bottom:0;flex:1;" placeholder="${t('searchPlaceholder')}"
