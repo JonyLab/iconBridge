@@ -336,6 +336,7 @@ const state = {
   showSettings: false,
   showProxyHelp: null,
   lang: 'zh',              // 'zh' | 'en'
+  colorMode: 'mono',       // 'mono' (去色) | 'color' (原色), global, default mono
   cookie: '',
   proxyUrl: '',
   projects: [],
@@ -1316,6 +1317,7 @@ window.onmessage = async (event) => {
       state.selectedPid = msg.lastPid || '';
       state.proxyUrl = msg.proxyUrl || '';
       state.lang = msg.lang || 'zh';
+      state.colorMode = msg.colorMode === 'color' ? 'color' : 'mono';
       state.view = state.cookie ? 'MAIN' : 'NO_COOKIE';
       render();
       if (state.cookie) loadProjects();
