@@ -85,11 +85,18 @@ function buildReplaceFields(showSvg, colorMode) {
     const fm = tag.match(/\bfill="([^"]*)"/);
     fills.push(fm ? fm[1] : '#333333'); // iconfont's conventional default when a path has no fill
   }
+  // previewSvg reconstructs show_svg from what we actually store, so the in-plugin
+  // preview matches the saved result (color = per-path fills, mono = currentColor)
+  // instead of the source's colors. Y-down display coords (1024 viewBox), same as show_svg.
+  const wrap = function (inner) {
+    return '<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">' + inner + '</svg>';
+  };
   if (colorMode === 'color') {
     return {
       prototypeSvg: ds.join('|'),
       svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join('|'),
       pathAttributes: fills.map(function (f) { return 'fill="' + f + '"'; }).join('|'),
+      previewSvg: wrap(ds.map(function (d, i) { return '<path d="' + d + '" fill="' + fills[i] + '" />'; }).join('')),
     };
   }
   // mono — true decolorize: drop every source fill and emit a single fill="currentColor"
@@ -98,6 +105,7 @@ function buildReplaceFields(showSvg, colorMode) {
     prototypeSvg: ds.join(' '),
     svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join(' '),
     pathAttributes: 'fill="currentColor"',
+    previewSvg: wrap('<path d="' + ds.join(' ') + '" fill="currentColor" />'),
   };
 }
 
@@ -317,10 +325,12 @@ figma.ui.onmessage = async (msg) => {
         let j3;
         try { j3 = JSON.parse(t3); }
         catch (_) { throw new Error(`保存失败 HTTP ${r3.status}: ${t3.slice(0, 100)}`); }
+        // Return a preview that reflects what we stored (mono = currentColor, color = per-path
+        // fills), reconstructed from our fields — not the source-colored getPrototypeSvg show_svg.
         if (j3 && typeof j3 === 'object' && j3.data && typeof j3.data === 'object') {
-          if (!j3.data.show_svg) j3.data.show_svg = showSvg;
+          if (!j3.data.show_svg) j3.data.show_svg = fields.previewSvg;
         } else if (j3 && typeof j3 === 'object') {
-          j3.show_svg = showSvg;
+          j3.show_svg = fields.previewSvg;
         }
         figma.ui.postMessage({ type: 'api-result', id: msg.id, data: j3 });
       } catch (e) {

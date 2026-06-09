@@ -80,3 +80,12 @@ assert(noFill.pathAttributes === 'fill="currentColor"', 'mono: 无 fill 源也�
 // ── 原色:某路径缺 fill 回退 #333333 ──
 const colorNoFill = buildReplaceFields('<svg><path d="M0 0H10V10z" fill="#FF0000"/><path d="M0 10H10V20z"/></svg>', 'color');
 assert(colorNoFill.pathAttributes === 'fill="#FF0000"|fill="#333333"', 'color: 缺 fill 的路径回退 #333333,与有色路径对齐');
+
+// ── previewSvg:重建预览,反映真实存储状态(而非源图颜色) ──
+// 去色预览:单 path,统一 currentColor,不带源图任何 hex
+assert(m.previewSvg.indexOf('fill="currentColor"') !== -1, 'mono previewSvg: 含 fill="currentColor"');
+assert(m.previewSvg.indexOf('#464655') === -1 && m.previewSvg.indexOf('#FFE15A') === -1, 'mono previewSvg: 不含源图颜色(已去色)');
+assert((m.previewSvg.match(/<path/g) || []).length === 1, 'mono previewSvg: 合并为单 path');
+// 原色预览:逐路径保留各自 fill
+assert((c.previewSvg.match(/<path/g) || []).length === 3, 'color previewSvg: 3 个 path');
+assert(c.previewSvg.indexOf('fill="#464655"') !== -1 && c.previewSvg.indexOf('fill="#FF4B55"') !== -1, 'color previewSvg: 逐路径保留原色');
