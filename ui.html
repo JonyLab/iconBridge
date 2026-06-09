@@ -122,12 +122,12 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 .btn-action-bar:hover:not(:disabled) { background: #2563eb; }
 .btn-action-bar:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
 .btn-action-secondary { background: #fff; color: #374151; border: 1px solid #d1d5db; }
-.color-seg-row { display: flex; justify-content: center; margin-bottom: 8px; }
-.color-seg { display: inline-flex; background: #e5e7eb; border-radius: 9999px; padding: 3px; gap: 2px; }
-.color-seg-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border: none; background: transparent; border-radius: 9999px; cursor: pointer; font-size: 13px; font-weight: 600; color: #9ca3af; transition: background 0.15s, color 0.15s; }
+.color-seg-wrap { display: flex; justify-content: flex-end; }
+.color-seg { display: inline-flex; background: #e5e7eb; border-radius: 9999px; padding: 2px; gap: 2px; }
+.color-seg-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: none; background: transparent; border-radius: 9999px; cursor: pointer; font-size: 10px; font-weight: 600; color: #9ca3af; transition: background 0.15s, color 0.15s; }
 .color-seg-btn.active { background: #fff; color: #111827; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-.color-seg-ic { display: inline-flex; width: 18px; height: 18px; flex-shrink: 0; }
-.color-seg-ic svg { width: 18px; height: 18px; display: block; }
+.color-seg-ic { display: inline-flex; width: 13px; height: 13px; flex-shrink: 0; }
+.color-seg-ic svg { width: 13px; height: 13px; display: block; }
 .color-seg-btn:not(.active) .color-seg-ic { filter: grayscale(1) opacity(0.55); }
 .btn-action-secondary:hover:not(:disabled) { background: #f3f4f6; }
 
@@ -609,10 +609,10 @@ const SVG_COLOR_CIRCLES = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://ww
 
 function buildColorSeg() {
   const mono = state.colorMode !== 'color';
-  return '<div class="color-seg-row"><div class="color-seg">' +
+  return '<div class="color-seg">' +
     `<button id="btn-color-mono" class="color-seg-btn${mono ? ' active' : ''}"><span class="color-seg-ic">${SVG_FEATHER}</span><span>${t('colorMono')}</span></button>` +
     `<button id="btn-color-color" class="color-seg-btn${mono ? '' : ' active'}"><span class="color-seg-ic">${SVG_COLOR_CIRCLES}</span><span>${t('colorColor')}</span></button>` +
-  '</div></div>';
+  '</div>';
 }
 function buildReplacePreview() {
   const hasNode = !!state.figmaNode;
@@ -635,9 +635,9 @@ function buildReplacePreview() {
   const btnLabel = state.replacing ? `<span class="spinner"></span> ${t('replacing')}` : t('confirmReplace');
 
   return '<div class="replace-preview-area">' +
+    '<div class="color-seg-wrap" style="margin-bottom:8px;">' + buildColorSeg() + '</div>' +
     '<div class="replace-pair">' + leftThumb + '<div class="replace-arrow">→</div>' + rightThumb + '</div>' +
     (!hasNode ? `<div style="text-align:center;font-size:10px;color:#9ca3af;margin-bottom:8px;">${t('selectNodeHint')}</div>` : '') +
-    buildColorSeg() +
     errorHtml +
     '<div style="display:flex;gap:8px;">' +
       `<button class="btn-action-bar ${state.replacing ? 'replacing' : ''}" id="btn-confirm-replace" ${ready && !state.replacing ? '' : 'disabled'}>${btnLabel}</button>` +
@@ -651,6 +651,7 @@ function buildUploadPage() {
   const header = '<div class="sub-header">' +
     '<button class="btn-back" id="btn-upload-back"><i class="ri-arrow-left-line"></i></button>' +
     `<span class="sub-header-title">${t('uploadPageTitle')}</span>` +
+    '<div style="margin-left:auto;">' + buildColorSeg() + '</div>' +
   '</div>';
   const projectHint = projectName
     ? '<div class="upload-project-hint">' + t('uploadTargetProject', esc(projectName.name)) + '</div>'
@@ -695,7 +696,7 @@ function buildUploadPage() {
 
   return header + projectHint +
     '<div class="main-body">' + body + '</div>' +
-    '<div class="action-footer">' + buildColorSeg() + errorHtml +
+    '<div class="action-footer">' + errorHtml +
       `<button class="btn-replace ${state.uploading ? 'uploading' : ''}" id="btn-do-upload" ${ready && !state.uploading ? '' : 'disabled'}>${btnLabel}</button>` +
     '</div>';
 }
