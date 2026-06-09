@@ -76,3 +76,7 @@ assert(m.svg.indexOf('|') === -1, 'mono: svg 不含竖线(空格连接)');
 // ── 去色:无 fill 单路径回退 #000000 ──
 const noFill = buildReplaceFields('<svg><path d="M0 0H10V10z"/></svg>', 'mono');
 assert(noFill.pathAttributes === 'fill="#000000"', 'mono: 无 fill 回退 #000000');
+
+// ── 原色:某路径缺 fill 回退 #333333 ──
+const colorNoFill = buildReplaceFields('<svg><path d="M0 0H10V10z" fill="#FF0000"/><path d="M0 10H10V20z"/></svg>', 'color');
+assert(colorNoFill.pathAttributes === 'fill="#FF0000"|fill="#333333"', 'color: 缺 fill 的路径回退 #333333,与有色路径对齐');

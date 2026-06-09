@@ -81,7 +81,7 @@ function buildReplaceFields(showSvg, colorMode) {
     if (!dm) continue;
     ds.push(dm[1]);
     const fm = tag.match(/\bfill="([^"]*)"/);
-    fills.push(fm ? fm[1] : '#333333');
+    fills.push(fm ? fm[1] : '#333333'); // iconfont's conventional default when a path has no fill
   }
   if (colorMode === 'color') {
     return {
@@ -91,6 +91,7 @@ function buildReplaceFields(showSvg, colorMode) {
     };
   }
   // mono — preserve legacy behavior exactly: single fill from first <path>, space-joined paths
+  // (re-scan via the legacy regex rather than fills[0] to stay byte-identical to pre-existing output)
   const fillMatch = showSvg.match(/<path[^>]+fill="([^"]*)"/);
   return {
     prototypeSvg: ds.join(' '),
