@@ -284,22 +284,17 @@ figma.ui.onmessage = async (msg) => {
         const showSvg = (j2.data && j2.data.show_svg) || '';
         const originFile = (j2.data && j2.data.origin_file) || msg.originSvg;
 
-        // Extract path d → prototype_svg, fill → path_attributes from show_svg
-        // Collect d from ALL <path> elements so multi-path icons (e.g. pause ▮▮) stay intact
-        const pathRe = /<path[^>]*\bd="([^"]*)"[^>]*\/?>/g;
-        const dValues = [];
-        var pm;
-        while ((pm = pathRe.exec(showSvg)) !== null) dValues.push(pm[1]);
-        const prototypeSvg = dValues.join(' ');
-        const fillMatch = showSvg.match(/<path[^>]+fill="([^"]*)"/);
-        const pathAttributes = fillMatch ? `fill="${fillMatch[1]}"` : 'fill="#000000"';
+        // Build prototype_svg / svg / path_attributes by mode (mono = legacy, color = per-path fills)
+        const fields = buildReplaceFields(showSvg, msg.colorMode === 'color' ? 'color' : 'mono');
+        const prototypeSvg = fields.prototypeSvg;
+        const pathAttributes = fields.pathAttributes;
 
         // Step 3: POST to updateProjectIcon.json to commit the replacement
         const saveBody = [
           `id=${encodeURIComponent(msg.iconId)}`,
           `prototype_svg=${encodeURIComponent(prototypeSvg)}`,
           `path_attributes=${encodeURIComponent(pathAttributes)}`,
-          `svg=${encodeURIComponent(dValues.map(d => flipPathDY(d, ICONFONT_FONT_ASCENT)).join(' '))}`,
+          `svg=${encodeURIComponent(fields.svg)}`,
           `origin_file=${encodeURIComponent(originFile)}`,
           `font_class=${encodeURIComponent(msg.fontClass)}`,
           `pid=${encodeURIComponent(msg.pid)}`,
