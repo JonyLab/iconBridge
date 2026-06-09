@@ -344,10 +344,14 @@ figma.ui.onmessage = async (msg) => {
         const ctoken = extractCtoken(msg.cookie);
 
         // Step 1: POST SVG to /api/uploadIcons.json (multipart, field: icons[])
+        // iconfont derives the new icon's name/font_class from the upload filename,
+        // so use the user-entered font_class (sanitized) instead of a fixed "icon.svg"
+        // — otherwise icons get auto-named "icon", "icon1"… by the server.
+        const uploadName = (String(msg.fontClass || 'icon').replace(/["\\\r\n]/g, '').trim()) || 'icon';
         const boundary = 'IFBound' + Date.now().toString(36);
         const uploadBody =
           '--' + boundary + '\r\n' +
-          'Content-Disposition: form-data; name="icons[]"; filename="icon.svg"\r\n' +
+          'Content-Disposition: form-data; name="icons[]"; filename="' + uploadName + '.svg"\r\n' +
           'Content-Type: image/svg+xml\r\n\r\n' +
           msg.originSvg + '\r\n' +
           '--' + boundary + '--\r\n';
