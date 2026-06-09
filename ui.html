@@ -31,6 +31,11 @@ select, input[type="text"], input:not([type]) {
 }
 select { -webkit-appearance: none; appearance: none; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
 select:focus, input:focus { border-color: #3b82f6; }
+.project-row { display: flex; gap: 6px; align-items: stretch; }
+.project-row select { flex: 1; }
+.btn-reload { flex-shrink: 0; width: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; background: #fff; border-radius: 5px; color: #6b7280; cursor: pointer; font-size: 15px; }
+.btn-reload:hover { background: #f3f4f6; color: #374151; }
+.btn-reload.spinning i { display: inline-block; animation: spin 0.7s linear infinite; }
 
 /* Buttons */
 .btn-primary { padding: 5px 12px; font-size: 11px; background: #111827; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
@@ -208,6 +213,7 @@ const STRINGS = {
     iconsLoading: '正在加载图标…',
     iconsErrorTitle: '加载图标失败',
     retryBtn: '重试',
+    reloadIcons: '刷新图标',
     noIcons: '该项目暂无图标',
     noMatchIcons: '无匹配图标',
     replaceBtn: fc => `替换 <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
@@ -287,6 +293,7 @@ const STRINGS = {
     iconsLoading: 'Loading icons…',
     iconsErrorTitle: 'Failed to Load Icons',
     retryBtn: 'Retry',
+    reloadIcons: 'Reload icons',
     noIcons: 'No icons in this project',
     noMatchIcons: 'No matching icons',
     replaceBtn: fc => `Replace <span style="font-weight:400;opacity:0.8;">${fc}</span>`,
@@ -544,7 +551,10 @@ function buildProjectSection() {
   ).join('');
   return `<div class="section">
     <div class="section-label">${t('projectLabel')}</div>
-    <select id="project-select">${opts}</select>
+    <div class="project-row">
+      <select id="project-select">${opts}</select>
+      <button class="btn-reload${state.iconsLoading ? ' spinning' : ''}" id="btn-reload-icons" title="${t('reloadIcons')}"><i class="ri-refresh-line"></i></button>
+    </div>
   </div>`;
 }
 
@@ -816,6 +826,7 @@ function bindEvents() {
   on('btn-reauth-replace', 'click', () => { state.showSettings = true; render(); });
   on('btn-reauth-upload', 'click', () => { state.showSettings = true; render(); });
   on('project-select', 'change', (e) => onProjectChange(e.target.value));
+  on('btn-reload-icons', 'click', () => loadIcons());
   on('search-input', 'input', (e) => {
     const pos = e.target.selectionStart;
     state.searchQuery = e.target.value;
