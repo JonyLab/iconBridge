@@ -68,7 +68,9 @@ function flipPathDY(d, H) {
 }
 
 // Build the prototype_svg / svg / path_attributes triple for updateProjectIcon.
-// mono (default): paths space-joined, single fill (legacy behavior, zero regression).
+// mono (default): true decolorize — all paths space-joined, fills stripped to a single
+//   fill="currentColor" so the icon follows the theme color (matches iconfont's
+//   monochrome convention: a single path with no hard-coded fill).
 // color: paths pipe-joined, one fill per path in document order (iconfont colored format).
 function buildReplaceFields(showSvg, colorMode) {
   const tagRe = /<path\b[^>]*>/g;
@@ -90,13 +92,12 @@ function buildReplaceFields(showSvg, colorMode) {
       pathAttributes: fills.map(function (f) { return 'fill="' + f + '"'; }).join('|'),
     };
   }
-  // mono — preserve legacy behavior exactly: single fill from first <path>, space-joined paths
-  // (re-scan via the legacy regex rather than fills[0] to stay byte-identical to pre-existing output)
-  const fillMatch = showSvg.match(/<path[^>]+fill="([^"]*)"/);
+  // mono — true decolorize: drop every source fill and emit a single fill="currentColor"
+  // so a colored source collapses into one theme-following monochrome silhouette.
   return {
     prototypeSvg: ds.join(' '),
     svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join(' '),
-    pathAttributes: fillMatch ? 'fill="' + fillMatch[1] + '"' : 'fill="#000000"',
+    pathAttributes: 'fill="currentColor"',
   };
 }
 

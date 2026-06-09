@@ -67,15 +67,15 @@ for (let i = 0; i < expSvgParts.length; i++) {
 }
 assert(svgOk, 'color: svg 逐路径 896-y 翻转与服务端几何等价');
 
-// ── 去色模式(保持现状:空格连接、单 fill) ──
+// ── 去色模式(真正去色:空格连接、统一 currentColor) ──
 const m = buildReplaceFields(COLOR_SHOW_SVG, 'mono');
 assert(m.prototypeSvg.indexOf('|') === -1, 'mono: prototypeSvg 不含竖线(空格连接)');
-assert(m.pathAttributes === 'fill="#464655"', 'mono: path_attributes 取首个 fill 单值');
+assert(m.pathAttributes === 'fill="currentColor"', 'mono: 彩色源去色后统一为单个 fill="currentColor"');
 assert(m.svg.indexOf('|') === -1, 'mono: svg 不含竖线(空格连接)');
 
-// ── 去色:无 fill 单路径回退 #000000 ──
+// ── 去色:无 fill 源同样输出 currentColor ──
 const noFill = buildReplaceFields('<svg><path d="M0 0H10V10z"/></svg>', 'mono');
-assert(noFill.pathAttributes === 'fill="#000000"', 'mono: 无 fill 回退 #000000');
+assert(noFill.pathAttributes === 'fill="currentColor"', 'mono: 无 fill 源也输出 fill="currentColor"');
 
 // ── 原色:某路径缺 fill 回退 #333333 ──
 const colorNoFill = buildReplaceFields('<svg><path d="M0 0H10V10z" fill="#FF0000"/><path d="M0 10H10V20z"/></svg>', 'color');
