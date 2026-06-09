@@ -41,10 +41,10 @@ select:focus, input:focus { border-color: #3b82f6; }
 .btn-replace { width: 100%; padding: 8px; font-size: 13px; font-weight: 500; background: #111827; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 .btn-replace:hover:not(:disabled) { background: #000000; }
 .btn-replace:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
-.btn-replace.replacing { background: #93c5fd; cursor: not-allowed; }
+.btn-replace.replacing { background: #374151; color: #fff; cursor: not-allowed; }
 
 /* Loading */
-.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid currentColor; border-top-color: transparent; opacity: 0.7; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f3f4f6; border-radius: 5px; color: #9ca3af; font-size: 11px; }
 
@@ -143,7 +143,7 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 /* Upload page */
 .upload-project-hint { padding: 6px 12px; background: #f0fdf4; border-bottom: 1px solid #e5e7eb; font-size: 11px; color: #166534; }
 .upload-empty { padding: 40px 20px; text-align: center; }
-.btn-replace.uploading { background: #93c5fd; cursor: not-allowed; }
+.btn-replace.uploading { background: #374151; color: #fff; cursor: not-allowed; }
 
 /* Drag cursor for icon grid */
 .icon-cell { cursor: grab; }
