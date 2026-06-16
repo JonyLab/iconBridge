@@ -20,6 +20,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; f
 .header-status.error { color: #dc2626; }
 .btn-icon { background: none; border: none; cursor: pointer; font-size: 15px; color: #6b7280; padding: 2px 4px; line-height: 1; }
 .btn-icon:hover { color: #374151; }
+.lang-seg { display: inline-flex; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; }
+.lang-seg-btn { padding: 5px 16px; font-size: 12px; background: #fff; color: #6b7280; border: none; cursor: pointer; }
+.lang-seg-btn + .lang-seg-btn { border-left: 1px solid #d1d5db; }
+.lang-seg-btn.active { background: #111827; color: #fff; }
 .btn-lang { font-size: 10px !important; font-weight: 700; padding: 2px 5px !important; border-radius: 3px; border: 1px solid #d1d5db !important; background: #fff !important; color: #6b7280 !important; }
 .btn-lang:hover { background: #f3f4f6 !important; color: #374151 !important; border-color: #9ca3af !important; }
 
@@ -192,6 +196,7 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 const STRINGS = {
   zh: {
     langToggle: 'EN',
+    langLabel: '语言',
     settingsTitle: '设置',
     settingsBtnTitle: '设置',
     cookieLabel: 'iconfont Cookie',
@@ -274,6 +279,7 @@ const STRINGS = {
   },
   en: {
     langToggle: '中',
+    langLabel: 'Language',
     settingsTitle: 'Settings',
     settingsBtnTitle: 'Settings',
     cookieLabel: 'iconfont Cookie',
@@ -493,12 +499,15 @@ function buildSettings() {
   return `<div class="settings-overlay">
     <div class="settings-header">
       <span class="settings-title">${t('settingsTitle')}</span>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <button class="btn-icon btn-lang" id="btn-lang-settings">${t('langToggle')}</button>
-        <button class="btn-icon" id="btn-settings-close"><i class="ri-close-line"></i></button>
-      </div>
+      <button class="btn-icon" id="btn-settings-close"><i class="ri-close-line"></i></button>
     </div>
     <div class="settings-body">
+      <div class="settings-label">${t('langLabel')}</div>
+      <div class="lang-seg">
+        <button id="btn-lang-zh" class="lang-seg-btn${state.lang === 'zh' ? ' active' : ''}">中文</button>
+        <button id="btn-lang-en" class="lang-seg-btn${state.lang === 'en' ? ' active' : ''}">English</button>
+      </div>
+      <div style="height:12px;"></div>
       <div class="settings-label">${t('cookieLabel')}</div>
       <div class="settings-hint">${t('cookieHint')}</div>
       <textarea class="cookie-input" id="cookie-input"
@@ -809,8 +818,8 @@ function previewSourceSvg(svgStr, mono) {
 }
 
 // ── LANG TOGGLE ──────────────────────────────────────────────────
-function toggleLang() {
-  state.lang = state.lang === 'zh' ? 'en' : 'zh';
+function setLang(lang) {
+  state.lang = lang === 'en' ? 'en' : 'zh';
   postToCode({ type: 'save-storage', lang: state.lang });
   render();
 }
@@ -822,8 +831,8 @@ function setColorMode(mode) {
 
 // ── BIND EVENTS ──────────────────────────────────────────────────
 function bindEvents() {
-  on('btn-lang', 'click', toggleLang);
-  on('btn-lang-settings', 'click', toggleLang);
+  on('btn-lang-zh', 'click', () => setLang('zh'));
+  on('btn-lang-en', 'click', () => setLang('en'));
   on('btn-download-worker', 'click', downloadWorker);
   on('btn-toggle-proxy-help', 'click', () => {
     const proxyHelpOpen = state.showProxyHelp === null ? !state.proxyUrl : state.showProxyHelp;
