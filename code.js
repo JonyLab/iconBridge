@@ -274,7 +274,7 @@ figma.ui.onmessage = async (msg) => {
       try {
         const ctoken = extractCtoken(msg.cookie);
         const res = await fetch(
-          `${msg.proxyUrl || DEFAULT_PROXY}/api/getAuditingIcons.json?limit=${encodeURIComponent(msg.limit || 100)}&page=1&type=&t=${Date.now()}&ctoken=${ctoken}`,
+          `${msg.proxyUrl || DEFAULT_PROXY}/api/getAuditingIcons.json?limit=${encodeURIComponent(msg.limit || 100)}&page=1&type=auditing&t=${Date.now()}&ctoken=${ctoken}`,
           {
             headers: {
               'X-Cookie': msg.cookie,

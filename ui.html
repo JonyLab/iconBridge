@@ -1080,10 +1080,9 @@ async function loadIcons(reselectId) {
   }
   // Pending-review icons for this project (best-effort; never blocks the grid)
   try {
+    // type=auditing already restricts to pending; just scope to the current project
     const lists = await IconfontAPI.getAuditing(state.cookie);
-    state.auditingIcons = lists.filter(it =>
-      String(it.termini_id) === String(state.selectedPid) && Number(it.status) === 0
-    );
+    state.auditingIcons = lists.filter(it => String(it.termini_id) === String(state.selectedPid));
   } catch (_) {
     state.auditingIcons = [];
   }
