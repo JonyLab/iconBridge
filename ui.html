@@ -77,6 +77,10 @@ select:focus, input:focus { border-color: #3b82f6; }
 .icon-cell.just-replaced:hover .icon-preview svg { animation: none; }
 .icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
 .icon-cell.selected .icon-name { color: #3b82f6; }
+.grid-note { grid-column: 1 / -1; padding: 12px; text-align: center; color: #9ca3af; font-size: 11px; }
+.grid-divider { grid-column: 1 / -1; font-size: 10px; color: #9ca3af; font-weight: 600; padding: 8px 2px 2px; border-top: 1px solid #eee; margin-top: 4px; }
+.audit-cell { position: relative; background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; padding: 3px 3px 4px; overflow: hidden; opacity: 0.65; }
+.audit-badge { position: absolute; top: 2px; right: 2px; font-size: 7px; line-height: 1.5; background: #f59e0b; color: #fff; padding: 0 3px; border-radius: 3px; }
 #icon-name-tip { position: fixed; display: none; max-width: 200px; background: rgba(17,24,39,0.95); color: #fff; font-size: 10px; line-height: 1.35; padding: 3px 6px; border-radius: 4px; word-break: break-all; pointer-events: none; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .empty-icons { padding: 16px; text-align: center; color: #9ca3af; font-size: 11px; }
 
@@ -205,6 +209,9 @@ const STRINGS = {
     reauth: '重新配置',
     noProjects: '暂无项目',
     iconsLabel: '图标库',
+    auditingLabel: n => `审核中 (${n})`,
+    auditingBadge: '审核中',
+    auditingTip: '审核中,通过后入库',
     iconsTotal: n => `共 ${n} 个`,
     searchPlaceholder: '搜索 font class…',
     uploadBtn: '上传',
@@ -285,6 +292,9 @@ const STRINGS = {
     reauth: 'Reconfigure',
     noProjects: 'No projects',
     iconsLabel: 'Icon Library',
+    auditingLabel: n => `Pending review (${n})`,
+    auditingBadge: 'Pending',
+    auditingTip: 'Pending review',
     iconsTotal: n => `${n} total`,
     searchPlaceholder: 'Search font class…',
     uploadBtn: 'Upload',
@@ -358,6 +368,7 @@ const state = {
   projects: [],
   selectedPid: '',
   icons: [],
+  auditingIcons: [],       // pending-review icons for the current project (status 0)
   searchQuery: '',
   selectedIcon: null,      // { id, font_class, name, show_svg, unicode } | null
   figmaNode: null,         // first selected node { id, name } | null
@@ -565,10 +576,6 @@ function buildIconsSection() {
       <div class="error-box-msg">${esc(state.iconsError)}</div>
     </div>
     <button class="btn-retry" id="btn-retry-icons">${t('retryBtn')}</button>`;
-  } else if (state.icons.length === 0) {
-    body = `<div class="empty-icons">${t('noIcons')}</div>`;
-  } else if (icons.length === 0) {
-    body = `<div class="empty-icons">${t('noMatchIcons')}</div>`;
   } else {
     const cells = icons.map(ic => {
       const sel = state.selectedIcon && String(state.selectedIcon.id) === String(ic.id);
@@ -578,7 +585,31 @@ function buildIconsSection() {
         <div class="icon-name">${esc(ic.font_class)}</div>
       </div>`;
     }).join('');
-    body = `<div class="icon-grid">${cells}</div>`;
+
+    let inner;
+    if (state.icons.length === 0) {
+      inner = `<div class="grid-note">${t('noIcons')}</div>`;
+    } else if (icons.length === 0) {
+      inner = `<div class="grid-note">${t('noMatchIcons')}</div>`;
+    } else {
+      inner = cells;
+    }
+
+    if (state.auditingIcons.length) {
+      inner += `<div class="grid-divider">${t('auditingLabel', state.auditingIcons.length)}</div>`;
+      inner += state.auditingIcons.map(it => {
+        const aic = it.icon || {};
+        const nm = aic.name || aic.slug || '';
+        const svgHtml = sanitizeSvgPreview(aic.show_svg || '');
+        return `<div class="audit-cell" title="${esc(nm)} · ${t('auditingTip')}">
+          <span class="audit-badge">${t('auditingBadge')}</span>
+          <div class="icon-preview">${svgHtml}</div>
+          <div class="icon-name">${esc(nm)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    body = `<div class="icon-grid">${inner}</div>`;
   }
 
   return `<div class="section section-icons">
@@ -1036,6 +1067,7 @@ async function loadIcons(reselectId) {
   state.iconsLoading = true;
   state.iconsError = null;
   state.selectedIcon = null;
+  state.auditingIcons = [];
   render();
   try {
     state.icons = await IconfontAPI.getIcons(state.cookie, state.selectedPid);
@@ -1045,7 +1077,17 @@ async function loadIcons(reselectId) {
   } catch (e) {
     state.iconsError = e.message;
     state.icons = [];
-  } finally {
+  }
+  // Pending-review icons for this project (best-effort; never blocks the grid)
+  try {
+    const lists = await IconfontAPI.getAuditing(state.cookie);
+    state.auditingIcons = lists.filter(it =>
+      String(it.termini_id) === String(state.selectedPid) && Number(it.status) === 0
+    );
+  } catch (_) {
+    state.auditingIcons = [];
+  }
+  {
     state.iconsLoading = false;
     render();
   }
@@ -1335,6 +1377,13 @@ const IconfontAPI = {
     if (json.code !== 200) throw new Error(json.message || t('apiGetIconsErr'));
     const icons = (json.data && json.data.icons) || [];
     return icons;
+  },
+
+  // Auditing/submission records across all projects; caller filters by project + status.
+  async getAuditing(cookie) {
+    const json = await apiCall('api-get-auditing', { cookie });
+    if (!json || json.code !== 200) return [];
+    return (json.data && json.data.lists) || [];
   },
 
   async uploadIcon(cookie, originSvg, fontClass, pid, keepFill) {

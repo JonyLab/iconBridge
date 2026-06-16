@@ -269,6 +269,27 @@ figma.ui.onmessage = async (msg) => {
       break;
     }
 
+    case 'api-get-auditing': {
+      // Auditing/submission records across all the user's projects (filtered by project in UI).
+      try {
+        const ctoken = extractCtoken(msg.cookie);
+        const res = await fetch(
+          `${msg.proxyUrl || DEFAULT_PROXY}/api/getAuditingIcons.json?limit=${encodeURIComponent(msg.limit || 100)}&page=1&type=&t=${Date.now()}&ctoken=${ctoken}`,
+          {
+            headers: {
+              'X-Cookie': msg.cookie,
+              Referer: 'https://www.iconfont.cn',
+            },
+          }
+        );
+        const json = await res.json();
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: json });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
     case 'api-replace-icon': {
       try {
         const ctoken = extractCtoken(msg.cookie);
