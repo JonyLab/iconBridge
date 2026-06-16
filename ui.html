@@ -1135,6 +1135,8 @@ async function handleBatchUpload(results) {
     state.uploadFontClasses = {};
     state.view = 'MAIN';
     render();
+    // Refresh so freshly-uploaded (审核中) icons show without a manual reload
+    loadIcons();
   }
 }
 
