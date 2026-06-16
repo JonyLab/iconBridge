@@ -154,7 +154,9 @@ textarea.cookie-input:focus { border-color: #3b82f6; }
 
 /* Sub header (upload page) */
 .sub-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; }
+.sub-header-titles { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .sub-header-title { font-weight: 600; font-size: 13px; }
+.sub-header-sub { font-size: 10px; font-weight: 400; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .btn-back { background: none; border: none; cursor: pointer; font-size: 14px; color: #6b7280; padding: 2px 4px; }
 .btn-back:hover { color: #374151; }
 
@@ -698,12 +700,12 @@ function buildUploadPage() {
   const projectName = state.projects.find(p => String(p.id) === String(state.selectedPid));
   const header = '<div class="sub-header">' +
     '<button class="btn-back" id="btn-upload-back"><i class="ri-arrow-left-line"></i></button>' +
-    `<span class="sub-header-title">${t('uploadPageTitle')}</span>` +
+    '<div class="sub-header-titles">' +
+      `<span class="sub-header-title">${t('uploadPageTitle')}</span>` +
+      (projectName ? `<span class="sub-header-sub" title="${esc(projectName.name)}">${t('uploadTargetProject', esc(projectName.name))}</span>` : '') +
+    '</div>' +
     '<div style="margin-left:auto;">' + buildColorSeg() + '</div>' +
   '</div>';
-  const projectHint = projectName
-    ? '<div class="upload-project-hint">' + t('uploadTargetProject', esc(projectName.name)) + '</div>'
-    : '';
 
   let body = '';
   if (state.figmaNodes.length === 0) {
@@ -742,7 +744,7 @@ function buildUploadPage() {
     : '';
   const btnLabel = state.uploading ? `<span class="spinner"></span> ${t('uploading')}` : t('uploadDoBtn', state.figmaNodes.length);
 
-  return header + projectHint +
+  return header +
     '<div class="main-body">' + body + '</div>' +
     '<div class="action-footer">' + errorHtml +
       `<button class="btn-replace ${state.uploading ? 'uploading' : ''}" id="btn-do-upload" ${ready && !state.uploading ? '' : 'disabled'}>${btnLabel}</button>` +
