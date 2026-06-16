@@ -78,7 +78,6 @@ select:focus, input:focus { border-color: #3b82f6; }
 .icon-name { font-size: 8px; color: #6b7280; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; padding: 0 2px; }
 .icon-cell.selected .icon-name { color: #3b82f6; }
 .grid-note { grid-column: 1 / -1; padding: 12px; text-align: center; color: #9ca3af; font-size: 11px; }
-.grid-divider { grid-column: 1 / -1; font-size: 10px; color: #9ca3af; font-weight: 600; padding: 8px 2px 2px; border-top: 1px solid #eee; margin-top: 4px; }
 .audit-cell { position: relative; background: #f3f4f6; border-radius: 4px; display: flex; flex-direction: column; align-items: center; padding: 3px 3px 4px; overflow: hidden; opacity: 0.65; }
 .audit-badge { position: absolute; top: 2px; right: 2px; font-size: 7px; line-height: 1.5; background: #f59e0b; color: #fff; padding: 0 3px; border-radius: 3px; }
 #icon-name-tip { position: fixed; display: none; max-width: 200px; background: rgba(17,24,39,0.95); color: #fff; font-size: 10px; line-height: 1.35; padding: 3px 6px; border-radius: 4px; word-break: break-all; pointer-events: none; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
@@ -209,7 +208,6 @@ const STRINGS = {
     reauth: '重新配置',
     noProjects: '暂无项目',
     iconsLabel: '图标库',
-    auditingLabel: n => `审核中 (${n})`,
     auditingBadge: '审核中',
     auditingTip: '审核中,通过后入库',
     iconsTotal: n => `共 ${n} 个`,
@@ -292,7 +290,6 @@ const STRINGS = {
     reauth: 'Reconfigure',
     noProjects: 'No projects',
     iconsLabel: 'Icon Library',
-    auditingLabel: n => `Pending review (${n})`,
     auditingBadge: 'Pending',
     auditingTip: 'Pending review',
     iconsTotal: n => `${n} total`,
@@ -586,28 +583,30 @@ function buildIconsSection() {
       </div>`;
     }).join('');
 
-    let inner;
-    if (state.icons.length === 0) {
-      inner = `<div class="grid-note">${t('noIcons')}</div>`;
-    } else if (icons.length === 0) {
-      inner = `<div class="grid-note">${t('noMatchIcons')}</div>`;
+    // Pending-review icons sit at the very top of the grid, distinguished by a badge
+    const auditCells = state.auditingIcons.map(it => {
+      const aic = it.icon || {};
+      const nm = aic.name || aic.slug || '';
+      const svgHtml = sanitizeSvgPreview(aic.show_svg || '');
+      return `<div class="audit-cell" title="${esc(nm)} · ${t('auditingTip')}">
+        <span class="audit-badge">${t('auditingBadge')}</span>
+        <div class="icon-preview">${svgHtml}</div>
+        <div class="icon-name">${esc(nm)}</div>
+      </div>`;
+    }).join('');
+
+    let approvedPart;
+    if (icons.length > 0) {
+      approvedPart = cells;
+    } else if (state.icons.length > 0) {
+      approvedPart = `<div class="grid-note">${t('noMatchIcons')}</div>`;
+    } else if (!auditCells) {
+      approvedPart = `<div class="grid-note">${t('noIcons')}</div>`;
     } else {
-      inner = cells;
+      approvedPart = '';
     }
 
-    if (state.auditingIcons.length) {
-      inner += `<div class="grid-divider">${t('auditingLabel', state.auditingIcons.length)}</div>`;
-      inner += state.auditingIcons.map(it => {
-        const aic = it.icon || {};
-        const nm = aic.name || aic.slug || '';
-        const svgHtml = sanitizeSvgPreview(aic.show_svg || '');
-        return `<div class="audit-cell" title="${esc(nm)} · ${t('auditingTip')}">
-          <span class="audit-badge">${t('auditingBadge')}</span>
-          <div class="icon-preview">${svgHtml}</div>
-          <div class="icon-name">${esc(nm)}</div>
-        </div>`;
-      }).join('');
-    }
+    const inner = auditCells + approvedPart;
 
     body = `<div class="icon-grid">${inner}</div>`;
   }
