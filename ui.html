@@ -432,7 +432,6 @@ function buildHeader(leftHtml) {
   return `<div class="header">
     ${leftHtml || '<span class="header-title">IconBridge</span>'}
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-      <button class="btn-icon btn-lang" id="btn-lang">${t('langToggle')}</button>
       <button class="btn-icon" id="btn-settings" title="${t('settingsBtnTitle')}"><i class="ri-settings-3-line"></i></button>
     </div>
   </div>`;
@@ -454,7 +453,7 @@ function buildHeaderProject() {
   const opts = state.projects.map(p =>
     `<option value="${esc(p.id)}" ${String(p.id) === String(state.selectedPid) ? 'selected' : ''}>${esc(p.name)}</option>`
   ).join('');
-  return `<span class="header-project-wrap"><i class="ri-folder-3-line header-project-ic"></i><select id="project-select" class="header-project">${opts}</select></span>`;
+  return `<span class="header-project-wrap"><i class="ri-folder-3-fill header-project-ic"></i><select id="project-select" class="header-project">${opts}</select></span>`;
 }
 
 function buildNoCookie() {
