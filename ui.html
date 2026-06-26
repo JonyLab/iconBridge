@@ -276,6 +276,17 @@ textarea.cookie-input:focus { border-color: var(--accent); }
 .toast.fade-out { animation: toast-out 0.3s ease-in forwards; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* Right-click context menu */
+.ctx-menu { position: fixed; z-index: 300; min-width: 120px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px var(--shadow-md); padding: 4px; }
+.ctx-menu-item { display: block; width: 100%; text-align: left; padding: 6px 10px; font-size: 12px; color: var(--text-primary); background: none; border: none; border-radius: 4px; cursor: pointer; }
+.ctx-menu-item:hover { background: var(--bg-chip-hover); }
+
+/* Confirm modal */
+.modal-overlay { position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.modal { width: 100%; max-width: 280px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; box-shadow: 0 8px 28px var(--shadow-md); }
+.modal-msg { font-size: 12px; color: var(--text-primary); line-height: 1.5; margin-bottom: 14px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 </style>
 </head>
 <body>
