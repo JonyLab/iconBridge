@@ -481,6 +481,8 @@ const state = {
   lang: 'zh',              // 'zh' | 'en'
   theme: 'light',          // 'light' | 'dark', persisted
   colorMode: 'mono',       // 'mono' (去色) | 'color' (原色), global, default mono
+  iconMenu: null,          // { id, x, y } | null — 右键菜单
+  decolorizeConfirm: null, // { id, fontClass } | null — 去色二次确认弹窗
   cookie: '',
   proxyUrl: '',
   projects: [],
@@ -1307,6 +1309,29 @@ async function handleSvgExported(svgRaw) {
   }
 }
 
+async function doDecolorize(iconId) {
+  const icon = state.icons.find(ic => String(ic.id) === String(iconId));
+  state.decolorizeConfirm = null;
+  if (!icon) { render(); return; }
+  render();
+  try {
+    const { showSvg } = await IconfontAPI.decolorizeIcon(state.cookie, iconId);
+    showToast(t('toastDecolorized', icon.font_class), 'success');
+    if (showSvg) {
+      const idx = state.icons.findIndex(ic => String(ic.id) === String(iconId));
+      if (idx !== -1) state.icons[idx] = Object.assign({}, state.icons[idx], { show_svg: showSvg });
+    }
+    render();
+    const cell = document.querySelector('.icon-cell[data-id="' + CSS.escape(String(iconId)) + '"]');
+    if (cell) {
+      cell.classList.add('just-replaced');
+      setTimeout(() => cell.classList.remove('just-replaced'), 750);
+    }
+  } catch (e) {
+    showToast(isAuthError(e.message) ? t('cookieExpiredReconfig') : e.message, 'error');
+  }
+}
+
 // ── HISTORICAL ICON FIX FLOW ─────────────────────────────────────
 function startFixScan() {
   if (!state.selectedPid || state.icons.length === 0) return;
@@ -1518,6 +1543,13 @@ const IconfontAPI = {
     if (json.code !== 200) throw new Error(json.message || t('apiGetIconsErr'));
     const icons = (json.data && json.data.icons) || [];
     return icons;
+  },
+
+  async decolorizeIcon(cookie, iconId) {
+    const json = await apiCall('api-decolorize-icon', { cookie, iconId, pid: state.selectedPid });
+    if (json.code !== 200) throw new Error(json.message || t('apiDecolorizeErr'));
+    const newShowSvg = (json.data && json.data.show_svg) || json.show_svg || '';
+    return { json, showSvg: newShowSvg };
   },
 
   // Auditing/submission records across all projects; caller filters by project + status.
