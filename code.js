@@ -455,6 +455,59 @@ figma.ui.onmessage = async (msg) => {
       break;
     }
 
+    case 'api-decolorize-icon': {
+      try {
+        const ctoken = extractCtoken(msg.cookie);
+        // Step 1: iconInfo sets the editing context and returns show_svg/origin_file/unicode/font_class/name
+        const infoRes = await fetch(
+          `${msg.proxyUrl || DEFAULT_PROXY}/api/icon/iconInfo.json?id=${encodeURIComponent(msg.iconId)}&pid=${encodeURIComponent(msg.pid)}&t=${Date.now()}&ctoken=${ctoken}`,
+          { headers: { 'X-Cookie': msg.cookie, Referer: 'https://www.iconfont.cn' } }
+        );
+        const infoJson = await infoRes.json();
+        if (infoJson.code !== 200 || !infoJson.data) throw new Error(infoJson.message || '获取图标信息失败');
+        const data = infoJson.data;
+        const showSvg = String(data.show_svg || '');
+        if (!showSvg) throw new Error('该图标缺少 show_svg，无法去色');
+
+        // Step 2: true decolorize -> single fill="currentColor"
+        const fields = buildReplaceFields(showSvg, 'mono');
+
+        // Step 3: commit (same field set as fix-broken / api-replace-icon)
+        const saveBody = [
+          `id=${encodeURIComponent(msg.iconId)}`,
+          `prototype_svg=${encodeURIComponent(fields.prototypeSvg)}`,
+          `path_attributes=${encodeURIComponent(fields.pathAttributes)}`,
+          `svg=${encodeURIComponent(fields.svg)}`,
+          `origin_file=${encodeURIComponent(data.origin_file || showSvg)}`,
+          `font_class=${encodeURIComponent(data.font_class || '')}`,
+          `pid=${encodeURIComponent(msg.pid)}`,
+          `unicode=${encodeURIComponent(data.unicode || '')}`,
+          `icon_name=${encodeURIComponent(data.name || data.font_class || '')}`,
+          `t=${Date.now()}`,
+          `ctoken=${ctoken}`,
+        ].join('&');
+        const r = await fetch(`${msg.proxyUrl || DEFAULT_PROXY}/api/icon/updateProjectIcon.json`, {
+          method: 'POST',
+          headers: { 'X-Cookie': msg.cookie, Referer: 'https://www.iconfont.cn', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: saveBody,
+        });
+        const respText = await r.text();
+        let respJson;
+        try { respJson = JSON.parse(respText); }
+        catch (_) { throw new Error(`去色失败 HTTP ${r.status}: ${respText.slice(0, 100)}`); }
+        // Preview fallback so the UI can update the cell immediately (mirrors api-replace-icon)
+        if (respJson && typeof respJson === 'object' && respJson.data && typeof respJson.data === 'object') {
+          if (!respJson.data.show_svg) respJson.data.show_svg = fields.previewSvg;
+        } else if (respJson && typeof respJson === 'object') {
+          respJson.show_svg = fields.previewSvg;
+        }
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: respJson });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
     case 'scan-broken': {
       // Identify icons where svg == prototype_svg (both Y-down = broken) vs
       // svg != prototype_svg (proper Y-up/Y-down pair = healthy).
