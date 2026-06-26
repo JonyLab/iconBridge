@@ -126,7 +126,8 @@ async function loadStorage() {
   const proxyUrl = (await figma.clientStorage.getAsync('iconfont_proxy_url')) || '';
   const lang = (await figma.clientStorage.getAsync('iconfont_lang')) || 'zh';
   const colorMode = (await figma.clientStorage.getAsync('iconfont_color_mode')) || 'mono';
-  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl, lang, colorMode });
+  const theme = (await figma.clientStorage.getAsync('iconfont_theme')) || 'light';
+  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl, lang, colorMode, theme });
 }
 loadStorage();
 
@@ -221,6 +222,9 @@ figma.ui.onmessage = async (msg) => {
       }
       if (msg.colorMode !== undefined) {
         await figma.clientStorage.setAsync('iconfont_color_mode', msg.colorMode);
+      }
+      if (msg.theme !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_theme', msg.theme);
       }
       break;
     }
