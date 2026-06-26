@@ -81,6 +81,22 @@ assert(noFill.pathAttributes === 'fill="currentColor"', 'mono: 无 fill 源也�
 const colorNoFill = buildReplaceFields('<svg><path d="M0 0H10V10z" fill="#FF0000"/><path d="M0 10H10V20z"/></svg>', 'color');
 assert(colorNoFill.pathAttributes === 'fill="#FF0000"|fill="#333333"', 'color: 缺 fill 的路径回退 #333333,与有色路径对齐');
 
+// ── 原色:保留半透明(fill-opacity / opacity) ──
+// Figma 把半透明填充导出为 fill + fill-opacity;图层透明度导出为 opacity。
+// 彩色模式必须把这些透明度一并写进 path_attributes,否则上传后变成 100% 不透明。
+const opa = buildReplaceFields(
+  '<svg><path d="M0 0H10V10z" fill="#FF0000" fill-opacity="0.5"/><path d="M0 10H10V20z" fill="#00FF00" opacity="0.3"/></svg>',
+  'color'
+);
+assert(opa.pathAttributes === 'fill="#FF0000" fill-opacity="0.5"|fill="#00FF00" opacity="0.3"',
+  'color: 逐路径保留 fill-opacity / opacity');
+assert(opa.previewSvg.indexOf('fill-opacity="0.5"') !== -1 && opa.previewSvg.indexOf('opacity="0.3"') !== -1,
+  'color previewSvg: 预览同样反映透明度');
+
+// ── 去色:透明度随去色一并丢弃(预期行为,统一 currentColor 实色) ──
+const monoOpa = buildReplaceFields('<svg><path d="M0 0H10V10z" fill="#FF0000" fill-opacity="0.5"/></svg>', 'mono');
+assert(monoOpa.pathAttributes === 'fill="currentColor"', 'mono: 去色丢弃透明度,仍为单个 currentColor');
+
 // ── previewSvg:重建预览,反映真实存储状态(而非源图颜色) ──
 // 去色预览:单 path,统一 currentColor,不带源图任何 hex
 assert(m.previewSvg.indexOf('fill="currentColor"') !== -1, 'mono previewSvg: 含 fill="currentColor"');

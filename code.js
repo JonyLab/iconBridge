@@ -76,6 +76,7 @@ function buildReplaceFields(showSvg, colorMode) {
   const tagRe = /<path\b[^>]*>/g;
   const ds = [];
   const fills = [];
+  const opacities = []; // per-path transparency attrs (fill-opacity / opacity) to preserve, '' if none
   var m;
   while ((m = tagRe.exec(showSvg)) !== null) {
     const tag = m[0];
@@ -84,6 +85,15 @@ function buildReplaceFields(showSvg, colorMode) {
     ds.push(dm[1]);
     const fm = tag.match(/\bfill="([^"]*)"/);
     fills.push(fm ? fm[1] : '#333333'); // iconfont's conventional default when a path has no fill
+    // Figma exports semi-transparent fills as fill-opacity, and layer opacity as opacity.
+    // iconfont's colored path_attributes is a free-form attr string, so carry these through
+    // verbatim — otherwise a translucent source collapses to 100% opaque after upload.
+    var opa = '';
+    var fom = tag.match(/\bfill-opacity="([^"]*)"/);
+    if (fom) opa += ' fill-opacity="' + fom[1] + '"';
+    var om = tag.match(/(?:^|[^-])\bopacity="([^"]*)"/);
+    if (om) opa += ' opacity="' + om[1] + '"';
+    opacities.push(opa);
   }
   // previewSvg reconstructs show_svg from what we actually store, so the in-plugin
   // preview matches the saved result (color = per-path fills, mono = currentColor)
@@ -95,8 +105,8 @@ function buildReplaceFields(showSvg, colorMode) {
     return {
       prototypeSvg: ds.join('|'),
       svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join('|'),
-      pathAttributes: fills.map(function (f) { return 'fill="' + f + '"'; }).join('|'),
-      previewSvg: wrap(ds.map(function (d, i) { return '<path d="' + d + '" fill="' + fills[i] + '" />'; }).join('')),
+      pathAttributes: fills.map(function (f, i) { return 'fill="' + f + '"' + opacities[i]; }).join('|'),
+      previewSvg: wrap(ds.map(function (d, i) { return '<path d="' + d + '" fill="' + fills[i] + '"' + opacities[i] + ' />'; }).join('')),
     };
   }
   // mono — true decolorize: drop every source fill and emit a single fill="currentColor"
