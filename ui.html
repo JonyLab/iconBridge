@@ -544,7 +544,7 @@ function buildHTML() {
   if (state.showSettings) return buildSettings();
   if (state.view === 'NO_COOKIE') return buildNoCookie();
   if (state.view === 'UPLOAD') return buildUploadPage();
-  return buildMain();
+  return buildMain() + buildIconMenu() + buildDecolorizeConfirm();
 }
 
 // Escape user/API data before inserting into HTML strings
@@ -565,6 +565,28 @@ function themeToggleHtml() {
   const icon = isDark ? THEME_ICON_MOON : THEME_ICON_SUN;
   const title = isDark ? t('themeToLight') : t('themeToDark');
   return `<button class="btn-icon" id="btn-theme" title="${title}" style="display:inline-flex;align-items:center;">${icon}</button>`;
+}
+
+function buildIconMenu() {
+  if (!state.iconMenu) return '';
+  const { x, y } = state.iconMenu;
+  return `<div class="ctx-menu" id="icon-ctx-menu" style="left:${x}px;top:${y}px;">
+    <button class="ctx-menu-item" id="ctx-decolorize">${t('ctxDecolorize')}</button>
+  </div>`;
+}
+
+function buildDecolorizeConfirm() {
+  if (!state.decolorizeConfirm) return '';
+  const fc = state.decolorizeConfirm.fontClass;
+  return `<div class="modal-overlay" id="decolorize-overlay">
+    <div class="modal">
+      <div class="modal-msg">${t('decolorizeConfirmMsg', esc(fc))}</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-decolorize-cancel">${t('decolorizeCancel')}</button>
+        <button class="btn-primary" id="btn-decolorize-go">${t('decolorizeConfirmGo')}</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function buildHeader(leftHtml) {
