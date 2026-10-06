@@ -16,7 +16,12 @@
 - **Drag to Canvas** — Drag icons from the panel onto your Figma canvas as 48×48 SVG frames
 - **Insert to Canvas** — Select an icon and click "放入 Figma" to place it at viewport center
 - **Replace Icons** — Replace iconfont icons with updated designs from Figma, preserving font class and unicode
-- **Upload Icons** — Upload new icons from Figma to your iconfont project (batch supported)
+- **Upload Icons** — Upload new icons from Figma to your iconfont project (batch supported); the font class you enter is kept as the icon name instead of being auto-named `iconN`
+- **Mono / Color Mode** — Toggle between 去色 (single `fill="currentColor"`) and 原色 (keep original fills, incl. opacity) when replacing or uploading, with live preview; your choice is remembered
+- **Right-click Decolorize** — Right-click any icon in the library to convert an existing colored icon to mono in place
+- **Pending Review Icons** — Icons still under review (审核中) show at the top of the library with a badge; the list auto-refreshes after upload
+- **Light / Dark Theme** — Switch the plugin UI between light and dark
+- **Bilingual UI** — 中文 / English, switchable in settings
 
 ## Install
 
@@ -36,7 +41,7 @@ git clone https://github.com/JonyLab/iconBridge.git
 
 ## Setup
 
-The plugin requires two things to connect to iconfont.cn:
+The plugin requires two things to connect to iconfont.cn. For a step-by-step guide in Chinese, see [docs/setup-guide.md](docs/setup-guide.md).
 
 ### 1. iconfont Cookie
 
