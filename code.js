@@ -16,9 +16,10 @@ const ICONFONT_FONT_ASCENT = 896;
 function flipPathDY(d, H) {
   const tokens = d.match(/[MmLlHhVvCcSsQqTtAaZz]|-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) || [];
   const out = [];
-  const absY = (s) => String(H - parseFloat(s));
-  const relY = (s) => String(-parseFloat(s));
-  const negAngle = (s) => String(-parseFloat(s));
+  const fmt = (n) => { const r = Math.round(n * 1e5) / 1e5; return String(r); };
+  const absY = (s) => fmt(H - parseFloat(s));
+  const relY = (s) => fmt(-parseFloat(s));
+  const negAngle = (s) => fmt(-parseFloat(s));
   let i = 0;
   let prevCmd = '';
   while (i < tokens.length) {
@@ -66,12 +67,67 @@ function flipPathDY(d, H) {
   return out.join(' ');
 }
 
+// Build the prototype_svg / svg / path_attributes triple for updateProjectIcon.
+// mono (default): true decolorize — all paths space-joined, fills stripped to a single
+//   fill="currentColor" so the icon follows the theme color (matches iconfont's
+//   monochrome convention: a single path with no hard-coded fill).
+// color: paths pipe-joined, one fill per path in document order (iconfont colored format).
+function buildReplaceFields(showSvg, colorMode) {
+  const tagRe = /<path\b[^>]*>/g;
+  const ds = [];
+  const fills = [];
+  const opacities = []; // per-path transparency attrs (fill-opacity / opacity) to preserve, '' if none
+  var m;
+  while ((m = tagRe.exec(showSvg)) !== null) {
+    const tag = m[0];
+    const dm = tag.match(/\bd="([^"]*)"/);
+    if (!dm) continue;
+    ds.push(dm[1]);
+    const fm = tag.match(/\bfill="([^"]*)"/);
+    fills.push(fm ? fm[1] : '#333333'); // iconfont's conventional default when a path has no fill
+    // Figma exports semi-transparent fills as fill-opacity, and layer opacity as opacity.
+    // iconfont's colored path_attributes is a free-form attr string, so carry these through
+    // verbatim — otherwise a translucent source collapses to 100% opaque after upload.
+    var opa = '';
+    var fom = tag.match(/\bfill-opacity="([^"]*)"/);
+    if (fom) opa += ' fill-opacity="' + fom[1] + '"';
+    var om = tag.match(/(?:^|[^-])\bopacity="([^"]*)"/);
+    if (om) opa += ' opacity="' + om[1] + '"';
+    opacities.push(opa);
+  }
+  // previewSvg reconstructs show_svg from what we actually store, so the in-plugin
+  // preview matches the saved result (color = per-path fills, mono = currentColor)
+  // instead of the source's colors. Y-down display coords (1024 viewBox), same as show_svg.
+  const wrap = function (inner) {
+    return '<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">' + inner + '</svg>';
+  };
+  if (colorMode === 'color') {
+    return {
+      prototypeSvg: ds.join('|'),
+      svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join('|'),
+      pathAttributes: fills.map(function (f, i) { return 'fill="' + f + '"' + opacities[i]; }).join('|'),
+      previewSvg: wrap(ds.map(function (d, i) { return '<path d="' + d + '" fill="' + fills[i] + '"' + opacities[i] + ' />'; }).join('')),
+    };
+  }
+  // mono — true decolorize: drop every source fill and emit a single fill="currentColor"
+  // so a colored source collapses into one theme-following monochrome silhouette.
+  return {
+    prototypeSvg: ds.join(' '),
+    svg: ds.map(function (d) { return flipPathDY(d, ICONFONT_FONT_ASCENT); }).join(' '),
+    pathAttributes: 'fill="currentColor"',
+    previewSvg: wrap('<path d="' + ds.join(' ') + '" fill="currentColor" />'),
+  };
+}
+
 // On startup: read persisted data and send to UI
 async function loadStorage() {
   const cookie = (await figma.clientStorage.getAsync('iconfont_cookie')) || '';
   const lastPid = (await figma.clientStorage.getAsync('iconfont_last_pid')) || '';
   const proxyUrl = (await figma.clientStorage.getAsync('iconfont_proxy_url')) || '';
-  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl });
+  const lang = (await figma.clientStorage.getAsync('iconfont_lang')) || 'zh';
+  const colorMode = (await figma.clientStorage.getAsync('iconfont_color_mode')) || 'mono';
+  const theme = (await figma.clientStorage.getAsync('iconfont_theme')) || 'light';
+  figma.ui.postMessage({ type: 'storage-loaded', cookie, lastPid, proxyUrl, lang, colorMode, theme });
 }
 loadStorage();
 
@@ -161,6 +217,15 @@ figma.ui.onmessage = async (msg) => {
       if (msg.proxyUrl !== undefined) {
         await figma.clientStorage.setAsync('iconfont_proxy_url', msg.proxyUrl);
       }
+      if (msg.lang !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_lang', msg.lang);
+      }
+      if (msg.colorMode !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_color_mode', msg.colorMode);
+      }
+      if (msg.theme !== undefined) {
+        await figma.clientStorage.setAsync('iconfont_theme', msg.theme);
+      }
       break;
     }
     case 'notify': {
@@ -218,6 +283,27 @@ figma.ui.onmessage = async (msg) => {
       break;
     }
 
+    case 'api-get-auditing': {
+      // Auditing/submission records across all the user's projects (filtered by project in UI).
+      try {
+        const ctoken = extractCtoken(msg.cookie);
+        const res = await fetch(
+          `${msg.proxyUrl || DEFAULT_PROXY}/api/getAuditingIcons.json?limit=${encodeURIComponent(msg.limit || 100)}&page=1&type=auditing&t=${Date.now()}&ctoken=${ctoken}`,
+          {
+            headers: {
+              'X-Cookie': msg.cookie,
+              Referer: 'https://www.iconfont.cn',
+            },
+          }
+        );
+        const json = await res.json();
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: json });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
     case 'api-replace-icon': {
       try {
         const ctoken = extractCtoken(msg.cookie);
@@ -246,22 +332,17 @@ figma.ui.onmessage = async (msg) => {
         const showSvg = (j2.data && j2.data.show_svg) || '';
         const originFile = (j2.data && j2.data.origin_file) || msg.originSvg;
 
-        // Extract path d → prototype_svg, fill → path_attributes from show_svg
-        // Collect d from ALL <path> elements so multi-path icons (e.g. pause ▮▮) stay intact
-        const pathRe = /<path[^>]*\bd="([^"]*)"[^>]*\/?>/g;
-        const dValues = [];
-        var pm;
-        while ((pm = pathRe.exec(showSvg)) !== null) dValues.push(pm[1]);
-        const prototypeSvg = dValues.join(' ');
-        const fillMatch = showSvg.match(/<path[^>]+fill="([^"]*)"/);
-        const pathAttributes = fillMatch ? `fill="${fillMatch[1]}"` : 'fill="#000000"';
+        // Build prototype_svg / svg / path_attributes by mode (mono = legacy, color = per-path fills)
+        const fields = buildReplaceFields(showSvg, msg.colorMode === 'color' ? 'color' : 'mono');
+        const prototypeSvg = fields.prototypeSvg;
+        const pathAttributes = fields.pathAttributes;
 
         // Step 3: POST to updateProjectIcon.json to commit the replacement
         const saveBody = [
           `id=${encodeURIComponent(msg.iconId)}`,
           `prototype_svg=${encodeURIComponent(prototypeSvg)}`,
           `path_attributes=${encodeURIComponent(pathAttributes)}`,
-          `svg=${encodeURIComponent(dValues.map(d => flipPathDY(d, ICONFONT_FONT_ASCENT)).join(' '))}`,
+          `svg=${encodeURIComponent(fields.svg)}`,
           `origin_file=${encodeURIComponent(originFile)}`,
           `font_class=${encodeURIComponent(msg.fontClass)}`,
           `pid=${encodeURIComponent(msg.pid)}`,
@@ -279,10 +360,12 @@ figma.ui.onmessage = async (msg) => {
         let j3;
         try { j3 = JSON.parse(t3); }
         catch (_) { throw new Error(`保存失败 HTTP ${r3.status}: ${t3.slice(0, 100)}`); }
+        // Return a preview that reflects what we stored (mono = currentColor, color = per-path
+        // fills), reconstructed from our fields — not the source-colored getPrototypeSvg show_svg.
         if (j3 && typeof j3 === 'object' && j3.data && typeof j3.data === 'object') {
-          if (!j3.data.show_svg) j3.data.show_svg = showSvg;
+          if (!j3.data.show_svg) j3.data.show_svg = fields.previewSvg;
         } else if (j3 && typeof j3 === 'object') {
-          j3.show_svg = showSvg;
+          j3.show_svg = fields.previewSvg;
         }
         figma.ui.postMessage({ type: 'api-result', id: msg.id, data: j3 });
       } catch (e) {
@@ -296,10 +379,14 @@ figma.ui.onmessage = async (msg) => {
         const ctoken = extractCtoken(msg.cookie);
 
         // Step 1: POST SVG to /api/uploadIcons.json (multipart, field: icons[])
+        // iconfont derives the new icon's name/font_class from the upload filename,
+        // so use the user-entered font_class (sanitized) instead of a fixed "icon.svg"
+        // — otherwise icons get auto-named "icon", "icon1"… by the server.
+        const uploadName = (String(msg.fontClass || 'icon').replace(/["\\\r\n]/g, '').trim()) || 'icon';
         const boundary = 'IFBound' + Date.now().toString(36);
         const uploadBody =
           '--' + boundary + '\r\n' +
-          'Content-Disposition: form-data; name="icons[]"; filename="icon.svg"\r\n' +
+          'Content-Disposition: form-data; name="icons[]"; filename="' + uploadName + '.svg"\r\n' +
           'Content-Type: image/svg+xml\r\n\r\n' +
           msg.originSvg + '\r\n' +
           '--' + boundary + '--\r\n';
@@ -331,9 +418,9 @@ figma.ui.onmessage = async (msg) => {
           return {
             id: ic.id,
             name: msg.fontClass,
-            keepFill: false,
+            keepFill: !!msg.keepFill,
             unicode: ic.unicode || '',
-            slug: msg.fontClass
+            font_class: msg.fontClass
           };
         });
 
@@ -362,6 +449,59 @@ figma.ui.onmessage = async (msg) => {
         try { j2 = JSON.parse(t2); }
         catch (_) { throw new Error('保存失败 HTTP ' + r2.status + ': ' + t2.slice(0, 100)); }
         figma.ui.postMessage({ type: 'api-result', id: msg.id, data: j2 });
+      } catch (e) {
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
+      }
+      break;
+    }
+
+    case 'api-decolorize-icon': {
+      try {
+        const ctoken = extractCtoken(msg.cookie);
+        // Step 1: iconInfo sets the editing context and returns show_svg/origin_file/unicode/font_class/name
+        const infoRes = await fetch(
+          `${msg.proxyUrl || DEFAULT_PROXY}/api/icon/iconInfo.json?id=${encodeURIComponent(msg.iconId)}&pid=${encodeURIComponent(msg.pid)}&t=${Date.now()}&ctoken=${ctoken}`,
+          { headers: { 'X-Cookie': msg.cookie, Referer: 'https://www.iconfont.cn' } }
+        );
+        const infoJson = await infoRes.json();
+        if (infoJson.code !== 200 || !infoJson.data) throw new Error(infoJson.message || '获取图标信息失败');
+        const data = infoJson.data;
+        const showSvg = String(data.show_svg || '');
+        if (!showSvg) throw new Error('该图标缺少 show_svg，无法去色');
+
+        // Step 2: true decolorize -> single fill="currentColor"
+        const fields = buildReplaceFields(showSvg, 'mono');
+
+        // Step 3: commit (same field set as fix-broken / api-replace-icon)
+        const saveBody = [
+          `id=${encodeURIComponent(msg.iconId)}`,
+          `prototype_svg=${encodeURIComponent(fields.prototypeSvg)}`,
+          `path_attributes=${encodeURIComponent(fields.pathAttributes)}`,
+          `svg=${encodeURIComponent(fields.svg)}`,
+          `origin_file=${encodeURIComponent(data.origin_file || showSvg)}`,
+          `font_class=${encodeURIComponent(data.font_class || '')}`,
+          `pid=${encodeURIComponent(msg.pid)}`,
+          `unicode=${encodeURIComponent(data.unicode || '')}`,
+          `icon_name=${encodeURIComponent(data.name || data.font_class || '')}`,
+          `t=${Date.now()}`,
+          `ctoken=${ctoken}`,
+        ].join('&');
+        const r = await fetch(`${msg.proxyUrl || DEFAULT_PROXY}/api/icon/updateProjectIcon.json`, {
+          method: 'POST',
+          headers: { 'X-Cookie': msg.cookie, Referer: 'https://www.iconfont.cn', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: saveBody,
+        });
+        const respText = await r.text();
+        let respJson;
+        try { respJson = JSON.parse(respText); }
+        catch (_) { throw new Error(`去色失败 HTTP ${r.status}: ${respText.slice(0, 100)}`); }
+        // Preview fallback so the UI can update the cell immediately (mirrors api-replace-icon)
+        if (respJson && typeof respJson === 'object' && respJson.data && typeof respJson.data === 'object') {
+          if (!respJson.data.show_svg) respJson.data.show_svg = fields.previewSvg;
+        } else if (respJson && typeof respJson === 'object') {
+          respJson.show_svg = fields.previewSvg;
+        }
+        figma.ui.postMessage({ type: 'api-result', id: msg.id, data: respJson });
       } catch (e) {
         figma.ui.postMessage({ type: 'api-result', id: msg.id, error: e.message });
       }
