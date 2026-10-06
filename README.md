@@ -8,6 +8,10 @@
   Figma plugin — Browse, replace, and sync icons between Figma and iconfont.cn
 </p>
 
+<p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 ---
 
 ## Features
