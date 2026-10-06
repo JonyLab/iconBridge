@@ -4,3 +4,4 @@
 .superpowers/
 node_modules/
 docs/superpowers/
+.claude/
